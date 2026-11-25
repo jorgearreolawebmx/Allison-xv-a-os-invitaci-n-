@@ -49,13 +49,18 @@
     document.documentElement.dataset.allisonUpdated = '1';
 
     var params = new URLSearchParams(location.search);
+    function generalPublicUrl() {
+      var u = new URL(location.href); u.search = ''; u.hash = ''; u.searchParams.set('general', '1'); return u.href;
+    }
     var guestName = (params.get('invitado') || '').trim();
     var passCount = Math.max(1, Math.min(20, parseInt(params.get('pases') || '0', 10) || 0));
     var guestId = (params.get('id') || '').trim();
+    var generalPass = params.get('general') === '1';
     if (!/^[A-Za-z0-9]{12,32}$/.test(guestId)) guestId = '';
-    // Con backend, el enlace lleva solo el ID: nombre y pases se leen del servidor (no se pueden alterar desde la URL).
+    // Enlaces personalizados usan un ID del servidor; el pase general es un enlace compartido que crea un registro por persona.
     var serverGuest = !!(guestId && BACKEND);
-    var personalized = serverGuest || (!!guestName && passCount > 0);
+    if (generalPass) { guestName = 'PASE GENERAL'; passCount = 1; }
+    var personalized = generalPass || serverGuest || (!!guestName && passCount > 0);
     var guestData = null, guestLoad = null, loadGuest = function () { return Promise.reject({ code: 'NO_GUEST', message: 'Invitación no disponible.' }); };
 
     // Portada: zona táctil invisible exactamente sobre el sello del video original.
@@ -128,7 +133,7 @@
     var passCard = el('section', 'allison-pass-section');
     passCard.style.top = (passIntroHeight + 670) + 'px';
     if (personalized) {
-      var passImg = el('img', 'allison-pass-art'); passImg.src = 'assets/pase_allison.png'; passImg.alt = 'Pase de invitación'; passCard.appendChild(passImg);
+      var passImg = el('img', 'allison-pass-art'); passImg.src = 'assets/pase_allison.webp'; passImg.alt = 'Pase de invitación'; passCard.appendChild(passImg);
       var passText = el('div', 'allison-pass-number', serverGuest ? '·' : String(passCount)); passCard.appendChild(passText);
     }
     invitation.appendChild(passCard);
@@ -142,8 +147,8 @@
       section.appendChild(img); section.appendChild(heading); section.appendChild(name);
       invitation.appendChild(section);
     }
-    personSection(2660 - shiftUp, 'assets/padres_allison.png', 'MIS PADRES', 'Ana Hernández Alarcón  ·  Víctor Portilla García', 'parents');
-    personSection(2660 + 600 - shiftUp, 'assets/madrina_allison.png', 'MI MADRINA', 'Isidora García Ortiz', 'godmother');
+    personSection(2660 - shiftUp, 'assets/padres_allison.webp', 'MIS PADRES', 'Ana Hernández Alarcón  ·  Víctor Portilla García', 'parents');
+    personSection(2660 + 600 - shiftUp, 'assets/madrina_allison.webp', 'MI MADRINA', 'Isidora García Ortiz', 'godmother');
 
     // Mensaje final de agradecimiento, después de todas las secciones originales.
     var thanks = el('p', 'allison-thanks-message', '«Gracias por acompañarnos en este día tan especial».');
@@ -222,8 +227,56 @@
         box.appendChild(button('REINTENTAR', 'allison-btn', function () { guestLoad = null; openServerRsvp(); }));
       });
     }
-    // Confirmación de asistencia por WhatsApp (invitación general o sin backend).
+    // Pase general reutilizable: cada persona introduce su nombre y genera SU propio registro en Sheets.
+    function openGeneralRsvp() {
+      var box = el('div', 'allison-form');
+      box.appendChild(el('h2', '', 'CONFIRMA TU ASISTENCIA'));
+      box.appendChild(el('p', 'allison-note allison-center', 'Este enlace es compartido. Cada persona debe registrar su nombre por separado. El pase general corresponde a una persona.'));
+      var f = makeField('Tu nombre completo', 'Escribe tu nombre y apellidos');
+      box.appendChild(f.wrap);
+      var status = el('p', 'allison-error', '');
+      status.setAttribute('role', 'status');
+      box.appendChild(status);
+      var requestId = randomId(24);
+      function submit(personas, trigger) {
+        var nombre = f.input.value.replace(/\s+/g, ' ').trim();
+        if (!nombre) { f.input.focus(); f.input.setAttribute('aria-invalid', 'true'); return; }
+        f.input.removeAttribute('aria-invalid');
+        if (!BACKEND) {
+          status.textContent = 'La confirmación no se puede guardar porque el servidor todavía no está conectado.';
+          return;
+        }
+        trigger.disabled = true; trigger.textContent = 'REGISTRANDO…'; status.textContent = '';
+        api('confirmGeneral', { nombre: nombre, personas: personas, submissionId: requestId, enlace: generalPublicUrl() }).then(function (res) {
+          box.replaceChildren(el('h2', '', personas === 1 ? '¡GRACIAS POR CONFIRMAR!' : 'RESPUESTA REGISTRADA'));
+          box.appendChild(el('p', 'allison-status is-ok', personas === 1
+            ? 'Tu asistencia quedó registrada correctamente. Confirmamos 1 persona.'
+            : 'Registramos que no podrás asistir. Gracias por avisarnos.'));
+          if (personas === 1) {
+            var msg = 'Hola, soy ' + nombre + '. Confirmo mi asistencia a los XV años de Allison Abril (1 persona).';
+            box.appendChild(button('AVISAR TAMBIÉN POR WHATSAPP', 'allison-btn', function () {
+              window.open(waLink(msg), '_blank', 'noopener,noreferrer');
+            }));
+            box.appendChild(el('p', 'allison-help allison-center', 'Opcional. WhatsApp se abrirá con el mensaje listo; recuerda pulsar «Enviar».'));
+          }
+        }, function (err) {
+          trigger.disabled = false;
+          trigger.textContent = personas === 1 ? 'CONFIRMAR MI ASISTENCIA' : 'NO PODRÉ ASISTIR';
+          status.textContent = err.message + ' No se registró la respuesta.';
+        });
+      }
+      box.appendChild(button('CONFIRMAR MI ASISTENCIA', 'allison-btn allison-btn-primary', function () {
+        submit(1, this);
+      }));
+      box.appendChild(button('NO PODRÉ ASISTIR', 'allison-btn', function () {
+        submit(0, this);
+      }));
+      showModal(box);
+    }
+
+    // Confirmación de asistencia por WhatsApp (invitación individual o anterior sin backend).
     function openRsvp() {
+      if (generalPass) { openGeneralRsvp(); return; }
       if (serverGuest) { openServerRsvp(); return; }
       var box = el('div', 'allison-form'); box.appendChild(el('h2', '', 'CONFIRMA TU ASISTENCIA'));
       var f = makeField('Nombre del invitado', 'Escribe tu nombre'); if (guestName) f.input.value = guestName;
@@ -243,7 +296,7 @@
     // Acceso discreto: la flor se ve como un adorno más; solo la administración sabe que es un botón.
     var adminLauncher = el('button', 'allison-admin-launcher'); adminLauncher.type = 'button';
     adminLauncher.setAttribute('aria-label', 'Administración');
-    var adminFlower = el('img'); adminFlower.src = 'assets/adorno_administracion.png'; adminFlower.alt = ''; adminFlower.draggable = false;
+    var adminFlower = el('img'); adminFlower.src = 'assets/adorno_administracion.webp'; adminFlower.alt = ''; adminFlower.draggable = false;
     adminLauncher.appendChild(adminFlower);
     var adminFooter = el('div', 'allison-admin-footer'); adminFooter.appendChild(adminLauncher); invitation.appendChild(adminFooter); liftUp(adminFooter, endLift);
     var adminToken = null;
@@ -303,9 +356,32 @@
     function generatorView() {
       var wrap = el('div', 'allison-form');
       wrap.appendChild(el('h3', 'allison-subtitle', editing ? 'EDITAR INVITADO' : 'GENERADOR DE INVITACIONES'));
+
+      // Un único enlace general se puede compartir con muchas personas; cada respuesta genera un registro independiente.
+      if (!editing) {
+        var generalBox = el('div', 'allison-general-pass');
+        generalBox.appendChild(el('h3', 'allison-subtitle', 'PASE GENERAL · 1 PERSONA'));
+        generalBox.appendChild(el('p', 'allison-help', 'Comparte el mismo enlace. Cada persona escribirá su nombre y su confirmación se guardará como un registro separado.'));
+        var generalResult = el('div', 'allison-link-result');
+        generalBox.appendChild(button('GENERAR ENLACE DE PASE GENERAL', 'allison-btn allison-btn-primary', function () {
+          var url = new URL(linkBase().href); url.searchParams.set('general', '1');
+          generalResult.replaceChildren();
+          var field = el('input', 'allison-generated-url'); field.readOnly = true; field.value = url.href; generalResult.appendChild(field);
+          var note = el('p', 'allison-copy-status', ''); note.setAttribute('role', 'status');
+          generalResult.appendChild(button('COPIAR PASE GENERAL', 'allison-btn', function () { copyWithFeedback(field.value, note, field); }));
+          generalResult.appendChild(note);
+          generalResult.appendChild(el('p', 'allison-help', 'No guarda una persona aquí: cada invitado se registra cuando envía su propia respuesta.'));
+        }));
+        generalBox.appendChild(generalResult);
+        wrap.appendChild(generalBox);
+      }
+
       var name = makeField('Nombre del invitado', 'Nombre y apellidos'); wrap.appendChild(name.wrap);
       var qty = makeField('Cantidad de pases', 'Ej. 2', 'number'); qty.input.min = '1'; qty.input.max = '20'; qty.input.value = '2'; wrap.appendChild(qty.wrap);
-      if (editing) { name.input.value = editing.nombre; qty.input.value = String(editing.pases); }
+      if (editing) {
+        name.input.value = editing.nombre; qty.input.value = String(editing.pases);
+        if (editing.tipo === 'Pase general') { qty.input.value = '1'; qty.input.disabled = true; }
+      }
       var result = el('div', 'allison-link-result');
       var current = null; // { id, nombre, pases, enlace }
       function invalidate() { if (current) { current = null; result.replaceChildren(el('p', 'allison-help', 'Los datos cambiaron: vuelve a pulsar GENERAR ENLACE.')); } }
@@ -317,8 +393,13 @@
         name.input.removeAttribute('aria-invalid'); qty.input.removeAttribute('aria-invalid');
         var url = linkBase();
         if (BACKEND) {
-          var id = editing ? editing.id : (current && current.id) || randomId(16);
-          url.searchParams.set('id', id); current = { id: id, nombre: n, pases: q, enlace: url.href };
+          if (editing && editing.tipo === 'Pase general') {
+            url.searchParams.set('general', '1');
+            current = { id: editing.id, nombre: n, pases: 1, enlace: url.href, tipo: 'Pase general' };
+          } else {
+            var id = editing ? editing.id : (current && current.id) || randomId(16);
+            url.searchParams.set('id', id); current = { id: id, nombre: n, pases: q, enlace: url.href, tipo: 'Personalizada' };
+          }
         } else {
           url.searchParams.set('invitado', n); url.searchParams.set('pases', String(q)); current = { nombre: n, pases: q, enlace: url.href };
         }
@@ -354,7 +435,16 @@
             });
           };
           result.appendChild(save); result.appendChild(saveStatus);
-          if (!editing) result.appendChild(el('p', 'allison-help', 'El enlace funcionará cuando el invitado quede guardado.'));
+          if (editing) {
+            result.appendChild(button('ELIMINAR INVITADO', 'allison-btn allison-btn-danger', function () {
+              if (!window.confirm('¿Eliminar definitivamente el registro de ' + editing.nombre + ' y su confirmación?')) return;
+              api('deleteGuest', { token: adminToken, id: editing.id }).then(function () {
+                editing = null; openAdmin('list');
+              }, function (err) { adminError(saveStatus, err); });
+            }));
+          } else {
+            result.appendChild(el('p', 'allison-help', 'El enlace funcionará cuando el invitado quede guardado.'));
+          }
         } else {
           result.appendChild(el('p', 'allison-help', 'Sin servidor conectado: el enlace lleva el nombre y los pases en la dirección y no se registra.'));
         }
@@ -378,17 +468,21 @@
           var list = res.guests || [];
           if (!list.length) { area.replaceChildren(el('p', 'allison-help allison-center', 'Todavía no hay invitados registrados.')); return; }
           var table = el('table', 'allison-table'); var thead = el('thead'); var tr = el('tr');
-          ['Invitado', 'Pases', 'Estado', 'Acciones'].forEach(function (h) { tr.appendChild(el('th', '', h)); }); thead.appendChild(tr); table.appendChild(thead);
+          ['Invitado', 'Tipo', 'Pases', 'Estado', 'Acciones'].forEach(function (h) { tr.appendChild(el('th', '', h)); }); thead.appendChild(tr); table.appendChild(thead);
           var tbody = el('tbody');
           list.forEach(function (g) {
-            var row = el('tr'); row.appendChild(el('td', 'allison-td-name', g.nombre)); row.appendChild(el('td', 'allison-num', String(g.pases)));
+            var row = el('tr'); row.appendChild(el('td', 'allison-td-name', g.nombre)); row.appendChild(el('td', '', g.tipo || 'Personalizada')); row.appendChild(el('td', 'allison-num', String(g.pases)));
             var st = el('td'); st.appendChild(statusPill(g.estado)); row.appendChild(st);
             var act = el('td'); var acts = el('div', 'allison-row-actions');
-            var detail = el('tr', 'allison-detail'); detail.hidden = true; var dcell = el('td'); dcell.colSpan = 4; detail.appendChild(dcell);
+            var detail = el('tr', 'allison-detail'); detail.hidden = true; var dcell = el('td'); dcell.colSpan = 5; detail.appendChild(dcell);
             var note = el('p', 'allison-copy-status', '');
             acts.appendChild(button('Copiar', 'allison-btn allison-btn-sm', function () { copyWithFeedback(g.enlace, note); detail.hidden = false; fill(); }));
             acts.appendChild(button('Ver', 'allison-btn allison-btn-sm', function () { detail.hidden = !detail.hidden; fill(); }));
             acts.appendChild(button('Editar', 'allison-btn allison-btn-sm', function () { editing = g; openAdmin('gen'); }));
+            acts.appendChild(button('Eliminar', 'allison-btn allison-btn-sm allison-btn-danger', function () {
+              if (!window.confirm('¿Eliminar definitivamente a ' + g.nombre + ' y su registro de confirmación?')) return;
+              api('deleteGuest', { token: adminToken, id: g.id }).then(load, function (err) { adminError(area, err, load); });
+            }));
             act.appendChild(acts); row.appendChild(act);
             function fill() {
               if (dcell.dataset.filled) return; dcell.dataset.filled = '1';
@@ -427,11 +521,11 @@
           if (!list.length) frag.appendChild(el('p', 'allison-help allison-center', 'Todavía no hay invitados registrados.'));
           else {
             var table = el('table', 'allison-table'); var thead = el('thead'); var tr = el('tr');
-            ['Invitado', 'Pases asignados', 'Estado', 'Personas confirmadas'].forEach(function (h) { tr.appendChild(el('th', '', h)); }); thead.appendChild(tr); table.appendChild(thead);
+            ['Invitado', 'Tipo', 'Pases asignados', 'Estado', 'Personas confirmadas'].forEach(function (h) { tr.appendChild(el('th', '', h)); }); thead.appendChild(tr); table.appendChild(thead);
             var tbody = el('tbody');
             list.slice().sort(function (a, b) { var o = { 'Confirmado': 0, 'No asistirá': 1 }; return (o[a.estado] == null ? 2 : o[a.estado]) - (o[b.estado] == null ? 2 : o[b.estado]); })
               .forEach(function (c) {
-                var row = el('tr'); row.appendChild(el('td', 'allison-td-name', c.nombre)); row.appendChild(el('td', 'allison-num', String(c.pases)));
+                var row = el('tr'); row.appendChild(el('td', 'allison-td-name', c.nombre)); row.appendChild(el('td', '', c.tipo || 'Personalizada')); row.appendChild(el('td', 'allison-num', String(c.pases)));
                 var st = el('td'); st.appendChild(statusPill(c.estado)); if (c.fechaConfirmacion) st.appendChild(el('small', 'allison-block', fmtDate(c.actualizado || c.fechaConfirmacion))); row.appendChild(st);
                 row.appendChild(el('td', 'allison-num', String(c.personas))); tbody.appendChild(row);
               });

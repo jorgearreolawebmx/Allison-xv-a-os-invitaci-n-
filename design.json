@@ -117,7 +117,7 @@
               "h": 421.703,
               "rotation": 0,
               "opacity": 100,
-              "src": "assets/marco_ornamental_vintage_con_lirios_rosas.png",
+              "src": "assets/marco_ornamental_vintage_con_lirios_rosas.webp",
               "natW": 2172,
               "natH": 724,
               "fit": "cover",
@@ -136,7 +136,7 @@
               "h": 1458,
               "rotation": 0,
               "opacity": 100,
-              "src": "assets/marco_floral_barroco_rosa_con_peonias.png",
+              "src": "assets/marco_floral_barroco_rosa_con_peonias.webp",
               "natW": 1024,
               "natH": 1536,
               "fit": "cover",
@@ -155,7 +155,7 @@
               "h": 648,
               "rotation": 0,
               "opacity": 100,
-              "src": "assets/caja_floral_para_sobres_de_boda.png",
+              "src": "assets/caja_floral_para_sobres_de_boda.webp",
               "natW": 1536,
               "natH": 1024,
               "fit": "cover",
@@ -174,7 +174,7 @@
               "h": 211.787,
               "rotation": -31.79,
               "opacity": 100,
-              "src": "assets/sobre_vintage_con_sello_de_corazon_y_lirio_rosa.png",
+              "src": "assets/sobre_vintage_con_sello_de_corazon_y_lirio_rosa.webp",
               "natW": 1536,
               "natH": 1024,
               "fit": "cover",
@@ -225,7 +225,7 @@
               "h": 1295.334,
               "rotation": 0,
               "opacity": 100,
-              "src": "assets/panel_confirmacion_asistencia_transparente.png",
+              "src": "assets/panel_confirmacion_asistencia_transparente.webp",
               "natW": 1024,
               "natH": 1536,
               "fit": "cover",
@@ -259,7 +259,7 @@
                   "transition": "fade"
                 }
               },
-              "src": "assets/boton_confirmar_whatsapp_transparente.png",
+              "src": "assets/boton_confirmar_whatsapp_transparente.webp",
               "natW": 2053,
               "natH": 641,
               "fit": "cover",
@@ -368,7 +368,7 @@
               "h": 1475.415,
               "rotation": 0,
               "opacity": 100,
-              "src": "assets/codigo_de_vestimenta_rosa_empolvado.png",
+              "src": "assets/codigo_de_vestimenta_rosa_empolvado.webp",
               "natW": 1024,
               "natH": 1536,
               "fit": "cover",
@@ -473,7 +473,7 @@
                   "transition": "fade"
                 }
               },
-              "src": "assets/iglesia_adornada_con_peonias_rosadas.png",
+              "src": "assets/iglesia_adornada_con_peonias_rosadas.webp",
               "natW": 1312,
               "natH": 1199,
               "fit": "cover",
@@ -521,7 +521,7 @@
                   "transition": "fade"
                 }
               },
-              "src": "assets/salon_elegante_con_peonias_rosadas.png",
+              "src": "assets/salon_elegante_con_peonias_rosadas.webp",
               "natW": 1312,
               "natH": 1199,
               "fit": "cover",
@@ -570,7 +570,7 @@
               "h": 320.824,
               "rotation": 0,
               "opacity": 100,
-              "src": "assets/muestrario_de_rosas_pastel.png",
+              "src": "assets/muestrario_de_rosas_pastel.webp",
               "natW": 1774,
               "natH": 887,
               "fit": "cover",
@@ -647,7 +647,7 @@
                   "enabled": true
                 }
               ],
-              "src": "assets/emblema_vintage_de_quinceanera_allison_abril.png",
+              "src": "assets/emblema_vintage_de_quinceanera_allison_abril.webp",
               "natW": 1774,
               "natH": 887,
               "fit": "cover",

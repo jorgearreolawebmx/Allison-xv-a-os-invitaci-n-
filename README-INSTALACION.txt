@@ -1,137 +1,120 @@
-ALLISON ABRIL — INSTALACIÓN DEL SISTEMA DE INVITADOS Y CONFIRMACIONES
-=====================================================================
+ALLISON ABRIL — ACTUALIZACIÓN DEL SISTEMA DE INVITADOS
+======================================================
 
-QUÉ HAY EN ESTE PROYECTO
-- index.html, script.js, design.js, styles.css, assets/ ... la invitación (sin cambios de diseño).
-- allison-update.js / allison-update.css ..................... funciones añadidas (panel, pases, animaciones).
-- allison-config.js ........................................... AQUÍ se pega la URL de Apps Script.
-- apps-script/Code.gs ......................................... backend completo (Google Apps Script).
-- README-INSTALACION.txt ...................................... este archivo.
+CONTENIDO
+---------
+- index.html, script.js, design.js, design.json, styles.css: invitación.
+- assets/: imágenes optimizadas a WebP, música y videos optimizados.
+- allison-update.js / allison-update.css: funciones de invitación y panel.
+- allison-config.js: URL de Google Apps Script ya configurada.
+- apps-script/Code.gs: backend actualizado.
+- Code.gs (copia en la raíz): mismo backend, para copiarlo con facilidad.
 
-Mientras allison-config.js tenga APPS_SCRIPT_URL vacío, la invitación funciona como antes:
-el panel genera enlaces, pero NO guarda invitados ni confirmaciones. El sistema completo
-queda activo al terminar los pasos siguientes. Tiempo aproximado: 15 minutos.
+IMPORTANTE SOBRE EL PASE GENERAL
+--------------------------------
+El panel incluye «GENERAR ENLACE DE PASE GENERAL». Es un solo enlace que puedes
+compartir con muchas personas. El enlace NO representa a un solo invitado.
 
+Cada persona que abre el pase general:
+1. Escribe su propio nombre.
+2. Confirma que asistirá (el pase general es de una persona) o indica que no asistirá.
+3. Envía su respuesta.
+4. El servidor crea un registro independiente en INVITADOS y otro en CONFIRMACIONES.
 
-PASO 1 — Abrir Apps Script y pegar el código
---------------------------------------------
-1. Abre el proyecto de Apps Script que usarás para Allison Abril.
-2. Abre el archivo «Código.gs» (o «Code.gs»).
-3. Borra su contenido y pega TODO el contenido del archivo apps-script/Code.gs incluido
-   en este ZIP (también se entrega como Code.gs independiente).
-4. Pulsa Guardar o Ctrl+S.
+Así, varias personas pueden utilizar la misma URL sin sobrescribir las respuestas
+de otras. Un reintento técnico de la misma solicitud no duplica el registro.
+El sistema no puede saber cuántas personas recibieron el enlace; solo puede registrar
+las respuestas que realmente se envían desde el formulario.
 
-IMPORTANTE: ya NO necesitas crear una hoja de cálculo ni copiar un ID.
-Al ejecutar setup(), el sistema crea automáticamente «XV Allison Abril - Invitados»
-(si el proyecto no está vinculado a una hoja) y guarda su ID en las propiedades
-del script. También crea las pestañas INVITADOS y CONFIRMACIONES sin borrar datos.
-
-PASO 2 — Inicializar automáticamente
--------------------------------------
-5. En el selector de funciones de la barra superior, elige «setup».
-6. Pulsa «Ejecutar» y autoriza los permisos que solicite Google.
-7. En «Registro de ejecución» debe aparecer «Configuración completada» y un enlace
-   a la hoja de cálculo creada. Abre ese enlace para consultar las pestañas.
-8. La primera ejecución configura la contraseña inicial del panel como:
-      allison12345
-   La contraseña queda guardada en las Propiedades del script. Si ya existía una
-   propiedad ADMIN_PASSWORD, setup() la conserva y NO la reemplaza.
-
-RECOMENDACIÓN DE SEGURIDAD: después de comprobar la instalación, puedes cambiar
-ADMIN_PASSWORD en Configuración del proyecto → Propiedades del script.
-
-PASO 5 — Publicar como aplicación web
--------------------------------------
-17. Botón azul «Implementar» (arriba a la derecha) → «Nueva implementación».
-18. Junto a «Seleccionar tipo», pulsa el engrane → «Aplicación web».
-19. Completa:
-      Descripción:          Invitación Allison v1
-      Ejecutar como:        Yo (tu correo)
-      Quién tiene acceso:   Cualquier usuario      ← necesario para que los invitados confirmen
-20. «Implementar». Si vuelve a pedir permisos, autorízalos igual que en el paso 15.
-21. Copia la «URL de la aplicación web». Tiene este formato:
-      https://script.google.com/macros/s/AKfy...larguísimo.../exec
-
-
-PASO 6 — Pegar la URL en la invitación
---------------------------------------
-22. Abre allison-config.js (en la carpeta principal del proyecto) con un editor de texto.
-23. Pega la URL entre las comillas de APPS_SCRIPT_URL:
-      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfy.../exec',
-24. Recomendado: en PUBLIC_URL pega la dirección donde publicarás la invitación, por ejemplo:
-      PUBLIC_URL: 'https://tu-sitio.com/allison/index.html'
-    Así los enlaces que generes apuntan a la página publicada aunque abras el panel desde tu computadora.
-25. Guarda el archivo y vuelve a subir la carpeta a tu hosting.
-
-
-PASO 7 — Probar la conexión
+INVITACIONES PERSONALIZADAS
 ---------------------------
-26. Prueba rápida: abre en el navegador tu URL de Apps Script añadiendo ?action=ping al final:
-      https://script.google.com/macros/s/AKfy.../exec?action=ping
-    Debe responder algo como:
-      {"ok":true,"data":{"version":"1.0.0","sheetsReady":true,"passwordConfigured":true}}
-27. Abre la invitación publicada → baja hasta el final → toca la flor (acceso de administración)
-    → escribe la contraseña del paso 10.
-28. Pestaña GENERADOR: escribe «Prueba», 3 pases → GENERAR ENLACE → COPIAR ENLACE → GUARDAR INVITADO.
-    Debe decir «Invitado guardado en Google Sheets» y aparecer una fila en la hoja INVITADOS.
-29. Abre el enlace copiado en otro navegador o en tu celular → botón «Confirmar por WhatsApp»
-    → elige 3 personas → CONFIRMAR ASISTENCIA. Debe aparecer una fila en CONFIRMACIONES.
-30. En el panel, pestaña CONFIRMACIONES → ACTUALIZAR: verás los indicadores y la fila confirmada.
-31. Borra las filas de prueba en la hoja cuando termines (solo las filas de datos, no los encabezados).
+Las invitaciones personalizadas mantienen su funcionamiento anterior:
+el administrador asigna nombre y cantidad de pases, genera un enlace con ID,
+y guarda ese registro. La confirmación actualiza el registro de esa invitación.
 
+PANEL ADMINISTRATIVO
+--------------------
+- GENERADOR: crea enlaces personalizados y el enlace general reutilizable.
+- INVITADOS: consulta, copia, edita y elimina registros.
+- CONFIRMACIONES: muestra las respuestas y las estadísticas.
+- Al eliminar un invitado, también se elimina su fila de confirmación asociada.
+- Los registros del pase general aparecen como invitados individuales con tipo
+  «Pase general» y 1 pase asignado.
 
-CÓMO FUNCIONA EL DÍA A DÍA
---------------------------
-- GENERADOR: nombre + pases → GENERAR ENLACE → COPIAR → GUARDAR INVITADO.
-  El enlace solo funciona cuando el invitado ya quedó guardado. Si escribes un nombre que ya existe,
-  el sistema avisa y te deja editar el existente o guardarlo como nuevo (por ejemplo, dos personas con
-  el mismo nombre).
-- INVITADOS: lista desde Google Sheets. «Copiar» vuelve a copiar el enlace, «Ver» muestra los detalles,
-  «Editar» permite cambiar nombre o pases (no se pueden asignar menos pases que personas ya confirmadas).
-- CONFIRMACIONES: indicadores (registrados, confirmadas, pendientes, no asistirán, pases asignados,
-  personas confirmadas) y la tabla de quién confirmó y cuántos vienen. Pulsa ACTUALIZAR para recargar.
-- El invitado elige cuántas personas asistirán (nunca más de sus pases) o «No podré asistir».
-  La confirmación se guarda en Google Sheets ANTES de ofrecer WhatsApp. El botón de WhatsApp es opcional:
-  abrirlo no significa que el mensaje se haya enviado, y el sistema no lo cuenta como confirmación.
-- Si el invitado vuelve a enviar, se actualiza su misma fila (no se duplica). Puede cambiar su respuesta
-  hasta 5 veces; después debe comunicarse con la familia. Puedes editar a mano la hoja si hace falta.
-- Si el servidor no responde, la invitación muestra un error y NO marca nada como guardado.
+ACTUALIZAR EL BACKEND DE GOOGLE APPS SCRIPT
+--------------------------------------------
+La invitación ya incluye la URL de Apps Script que estaba configurada. El backend
+debe actualizarse por separado porque Google Apps Script no se actualiza al subir
+archivos a GitHub.
 
+1. Abre el proyecto de Apps Script que ya utiliza Allison Abril.
+2. Abre Código.gs.
+3. Reemplaza todo su contenido por el archivo apps-script/Code.gs de este paquete.
+4. Guarda con Ctrl+S.
+5. En el selector de funciones, elige setup y pulsa Ejecutar.
+   - setup() es idempotente: crea las columnas nuevas que falten.
+   - No borra filas ni reinicia la hoja existente.
+   - Conserva el ID de Google Sheets y la contraseña guardados en las propiedades
+     del proyecto.
+6. En Configuración del proyecto → Propiedades del script, cambia ADMIN_PASSWORD
+   por una contraseña nueva y exclusiva antes de compartir el panel públicamente.
+   No escribas esta contraseña en allison-config.js ni en archivos del repositorio.
+6. Comprueba en el registro de ejecución que setup() terminó correctamente.
+7. Publica el cambio del servidor:
+   Implementar → Administrar implementaciones → lápiz (Editar) →
+   Versión: Nueva versión → Implementar.
+8. Conserva la misma implementación / URL que ya está en allison-config.js.
+   No crees una implementación distinta, para no cambiar la URL.
 
-SI CAMBIAS Code.gs MÁS ADELANTE
--------------------------------
-Implementar → «Administrar implementaciones» → lápiz (editar) → Versión: «Nueva versión» → Implementar.
-Así la URL /exec se mantiene igual y no tienes que volver a tocar allison-config.js.
-(Si en cambio creas una «Nueva implementación», la URL cambia y hay que pegarla otra vez.)
+La URL existente de Apps Script está configurada en allison-config.js.
+No necesitas editarla de nuevo, salvo que cambies deliberadamente la implementación.
 
+PRUEBAS RECOMENDADAS
+--------------------
+1. Panel → GENERADOR → genera un enlace de prueba personalizado → GUARDAR INVITADO.
+2. Panel → INVITADOS → verifica que aparezca y prueba EDITAR y ELIMINAR.
+3. Panel → GENERADOR → genera el ENLACE DE PASE GENERAL y cópialo.
+4. Abre ese mismo enlace en dos navegadores/dispositivos distintos.
+5. Envía una confirmación con el nombre «Prueba Uno» y otra con «Prueba Dos».
+6. Panel → INVITADOS: deben aparecer dos filas distintas, ambas tipo «Pase general».
+7. Panel → CONFIRMACIONES: deben aparecer las dos personas por separado.
+8. Comprueba las estadísticas. Cada respuesta de pase general suma una persona.
+9. Elimina los registros de prueba desde INVITADOS si ya no los necesitas.
 
-SEGURIDAD — LO QUE DEBES SABER
-------------------------------
-- La contraseña vive solo en las Propiedades del script (paso 10). El servidor la verifica y entrega
-  una sesión temporal de 6 horas; todas las operaciones administrativas exigen esa sesión.
-- Tras 8 contraseñas incorrectas, el acceso administrativo se bloquea 15 minutos para todos.
-- La contraseña antigua escrita en allison-update.js solo se usa si NO hay servidor configurado.
-  Con el servidor conectado no abre el panel ni da acceso a ningún dato.
-- Los enlaces de invitado llevan un identificador aleatorio de 16 caracteres. Nombre y pases se leen de
-  la hoja: cambiar la dirección (por ejemplo, añadir &pases=10) no cambia nada.
-- Un enlace de invitado solo puede ver y confirmar SU invitación. La lista completa nunca es pública.
-- «Quién tiene acceso: Cualquier usuario» es obligatorio para que los invitados confirmen sin cuenta de
-  Google; el script se ejecuta con tu cuenta, así que NO compartas la hoja de cálculo con nadie que no
-  deba ver los datos.
-- Cualquiera que tenga el enlace de un invitado puede confirmar por él (como con cualquier invitación
-  digital). Comparte cada enlace solo con su destinatario.
-- Si sospechas que alguien conoce la contraseña: cámbiala en ADMIN_PASSWORD. Las sesiones abiertas
-  vencen solas en máximo 6 horas.
+SEGURIDAD Y LÍMITES
+-------------------
+- Las operaciones administrativas requieren iniciar sesión y un token temporal.
+- Los enlaces públicos solo pueden registrar su propia respuesta o consultar la
+  invitación individual correspondiente.
+- No compartas la hoja de Google Sheets ni la contraseña administrativa.
+- Quien tenga el enlace general puede enviar una respuesta. Compártelo solo con
+  las personas a quienes deseas invitar.
+- La apertura de WhatsApp no prueba que el mensaje haya sido enviado. La respuesta
+  se cuenta cuando Google Apps Script acepta y guarda el formulario.
+- Para evitar abuso, revisa periódicamente la lista y elimina entradas incorrectas
+  desde el panel. Los nombres iguales son posibles en el pase general, porque pueden
+  corresponder a personas diferentes.
 
+OPTIMIZACIÓN PARA GITHUB
+------------------------
+Las imágenes PNG originales se convirtieron a WebP de alta calidad, conservando
+transparencia y dimensiones. Los videos se recomprimieron en H.264 y la música
+se recomprimió a 160 kbps. Se actualizaron las referencias en design.json,
+design.js y allison-update.js.
 
-SOLUCIÓN DE PROBLEMAS
----------------------
-- «El servidor todavía no está conectado»: APPS_SCRIPT_URL está vacío en allison-config.js.
-- «No se pudo conectar con el servidor»: revisa la URL (debe terminar en /exec), tu conexión, y que la
-  implementación tenga acceso «Cualquier usuario».
-- «El servidor no tiene contraseña de administración configurada»: falta ADMIN_PASSWORD (paso 10).
-- «Falta la hoja ... Ejecuta setup()»: ejecuta setup (paso 14).
-- «Falta configurar SPREADSHEET_ID»: pega el ID (paso 7) y vuelve a implementar como «Nueva versión».
-- Cambiaste el código y no se nota: debes publicar una «Nueva versión» (ver sección anterior).
-- El enlace generado empieza con file:/// : estás usando el panel desde tu computadora; configura
-  PUBLIC_URL (paso 24) o abre el panel desde la invitación publicada.
+Para publicar desde la página de GitHub:
+1. Extrae este ZIP en tu computadora.
+2. En GitHub abre el repositorio y elige Add file → Upload files.
+3. Sube el CONTENIDO extraído, manteniendo la carpeta assets y la carpeta
+   apps-script. No subas el ZIP como si fuera la página web: GitHub Pages no
+   descomprime archivos ZIP.
+4. Confirma el cambio (Commit changes).
+
+Cada archivo del proyecto queda por debajo del límite habitual de 25 MB por archivo
+de la interfaz web de GitHub. El ZIP es solo un paquete de transferencia.
+
+LIMPIEZA OPCIONAL DEL REPOSITORIO
+---------------------------------
+El archivo README-LIMPIEZA-PNG.txt enumera los PNG antiguos que ya no son utilizados.
+Si ya existían en GitHub, puedes eliminarlos después de comprobar la nueva versión.
+Los archivos .webp equivalentes son los que utiliza la invitación.

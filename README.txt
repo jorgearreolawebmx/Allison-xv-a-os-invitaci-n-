@@ -1,86 +1,32 @@
-WEDDIT STUDIO 0.13.2 — BASE WEB DE LA INVITACIÓN
-======================================================
+ALLISON ABRIL — INVITACIÓN DIGITAL
+===================================
 
-Proyecto: Weddit Studio - Sin título
-Exportado: 2026-11-24T21:22:14.273Z
+Proyecto web de la invitación de Allison Abril.
 
-CÓMO VERLA
-- Extrae el ZIP completo en una carpeta y haz doble clic en index.html. No necesita servidor ni conexión:
-  los datos están en design.js (no se usa fetch). Si lo abres desde dentro del ZIP sin extraerlo, la página
-  no encuentra sus archivos y muestra un aviso.
-- index.html?vista=intro        muestra solo la portada.
-- index.html?vista=invitacion   entra directo a la invitación.
+FUNCIONES
+---------
+- Portada animada, música y contenido original.
+- Enlaces de invitación personalizados con pases asignados.
+- Pase general reutilizable: el mismo enlace puede compartirse con muchas personas.
+- Cada persona que responde desde el pase general genera su propio registro en Google Sheets.
+- Panel administrativo con listado, edición y eliminación de invitados.
+- Confirmaciones y estadísticas de asistencia.
+- Backend Google Apps Script + Google Sheets.
 
-ARCHIVOS
-- index.html   estructura de la página.
-- styles.css   estilos. Arriba están las variables: ancho de la columna y colores exteriores.
-- script.js    construye la página a partir del diseño. Es el mismo código de dibujo que usa el editor.
-- design.js    el diseño como window.INVITAVECTOR_DESIGN (lo lee script.js).
-- design.json  el mismo diseño en JSON, para otras herramientas.
-- assets/      14 recurso(s): imágenes, videos y fuentes, copiados sin recodificar.
+PASE GENERAL
+------------
+El enlace general no representa a una sola persona. Cada persona escribe su nombre y
+envía su propia respuesta; el backend crea un registro independiente (un pase/persona).
+Los reintentos de una misma solicitud no duplican el registro.
 
-LOS TRES ESPACIOS
-- INTRO (1080 × 1920 px): portada a pantalla completa. Modo de entrada: tap; transición: fade.
-- FONDO FIJO (1080 × 1920 px): UNA pantalla. Queda fija dentro de la columna móvil
-  (position: sticky), detrás del contenido. No se alarga con la invitación ni cubre los márgenes exteriores.
-- INVITACIÓN (1080 × 10050 px): contenido largo que se desplaza por encima del fondo.
-  Lo que quedó fuera de la mesa en el editor no se exporta.
+INSTALACIÓN
+-----------
+Lee README-INSTALACION.txt. Este paquete actualiza el frontend y apps-script/Code.gs.
+Como Apps Script se publica por separado, debes reemplazar Code.gs en el proyecto existente,
+ejecutar setup() para añadir columnas faltantes sin borrar datos y publicar una nueva versión.
 
-CÓMO PROGRAMAR INTERACCIONES
-Cada objeto del diseño es un elemento propio:
-    <div id="iv-ID" class="iv-obj iv-TIPO" data-name="nombre" data-layer="capa" data-workspace="intro|background|invitation">
-- ID es el «ID para desarrollo» que escribiste en el editor (por ejemplo iv-boton-mapa) o, si no pusiste uno, el id interno.
-- Las capas son <div class="iv-layer" id="iv-layer-ID" data-name="…">.
-- Los objetos y capas ocultos en el editor se exportan con el atributo hidden, para que puedas mostrarlos por código
-  (por ejemplo, un sobre abierto que reemplaza al cerrado).
-
-FUNCIONES INTERACTIVAS INCLUIDAS EN ESTA EXPORTACIÓN
-- Efectos por objeto: entrada, énfasis, movimiento y salida. Se pueden activar al cargar, al entrar en pantalla, al pasar el cursor o al hacer clic.
-- Parámetros de efectos: duración, retraso, repeticiones, dirección y aceleración.
-- Sombras paralelas configuradas desde el panel de propiedades.
-- Botones creados o configurados desde el editor, con etiqueta, brillo hover, escala al presionar y acción.
-- Acciones disponibles: abrir/cerrar grupos popup, mostrar/ocultar/alternar un objeto, abrir un enlace seguro (http, https, mailto o tel), desplazarse hasta un objeto, entrar a la invitación y reproducir/pausar un medio.
-- Las transiciones de apertura disponibles son fundido, desplazamiento, zoom, desenfoque y cortina. Un botón configurado como «Abrir invitación» puede seleccionar su propia transición.
-- Los grupos popup se exportan ocultos y se muestran mediante una acción «Abrir ventana emergente». Para cerrarlos, configura una acción «Cerrar ventana emergente» apuntando al mismo popup:ID.
-- El runtime respeta la preferencia de movimiento reducido del dispositivo.
-
-API mínima (window.WedditStudio; compatible con window.InvitaVector):
-    WedditStudio.get('boton-mapa')      → elemento del objeto
-    WedditStudio.open()                 → entra a la invitación
-    WedditStudio.isOpen()               → true cuando ya se entró a la invitación
-    WedditStudio.elements               → mapa de ids a elementos
-    document.addEventListener('wedditstudio:ready', …)   la página está construida
-    document.addEventListener('wedditstudio:open', …)    se entró a la invitación
-
-Ejemplo:
-    document.addEventListener('wedditstudio:ready', function () {
-      var boton = WedditStudio.get('boton-mapa');
-      if (boton) boton.addEventListener('click', function () { window.open('https://maps.google.com/?q=…'); });
-    });
-
-LIMITACIONES DE ESTA VERSIÓN
-- Los grupos popup son grupos de objetos ocultables, no un constructor modal con fondo oscurecido, panel de contenido independiente ni cierre automático al pulsar fuera.
-- Todavía no incluye una línea de tiempo de fotogramas clave ni una vista de nodos para dibujar conexiones entre mesas.
-- Galerías avanzadas, formularios conectados, cámara, álbum colaborativo y panel administrativo requieren módulos específicos y/o servicios externos; no se generan automáticamente en esta versión.
-
-Para seguir diseñando, conserva project.json o el archivo editable .xalli.
-
-ACTUALIZACIÓN ALLISON ABRIL
----------------------------
-- allison-update.js / allison-update.css añaden los formularios, pop-ups, enlaces personalizados,
-  sección de padres/madrina, pase dinámico, apertura tocando el sello y retorno a portada.
-- assets/padres_allison.png, assets/madrina_allison.png y assets/pase_allison.png son los PNG suministrados.
-- Confirmación WhatsApp: +52 2284104065.
-- Acceso del panel: contraseña allison12345.
-- Enlaces individuales: ?invitado=NOMBRE&pases=CANTIDAD. Los datos viajan en la URL y funcionan
-  en otro navegador/dispositivo. La página debe estar publicada en una URL pública para compartirlos.
-- Nota de seguridad: la contraseña del panel está en el JavaScript del navegador; no equivale a
-  autenticación segura de servidor. La generación de enlaces no necesita base de datos porque la
-  información se codifica en los parámetros de cada URL.
-
-
-CORRECCIÓN DE DISTRIBUCIÓN — 2026-11-24
----------------------------------------
-- En enlaces personalizados, la identificación del invitado aparece al inicio y la tarjeta PASE se muestra inmediatamente debajo, antes del diseño principal.
-- Se reserva una franja superior de 750 px de diseño y se desplazan las capas originales en conjunto, manteniendo sus posiciones relativas y proporciones.
-- Las secciones MIS PADRES y MI MADRINA permanecen después del contenido de ubicaciones y del resto de secciones originales, antes del botón VOLVER AL SOBRE.
+OPTIMIZACIÓN
+------------
+Las imágenes están en WebP de alta calidad con transparencia. Audio y videos fueron
+recomprimidos para web. Las referencias de archivos están actualizadas en design.json,
+design.js y allison-update.js.

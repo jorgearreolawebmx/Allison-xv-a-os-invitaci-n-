@@ -9,8 +9,9 @@
  *    Configuración del proyecto → Propiedades del script → ADMIN_PASSWORD.
  *  - Al iniciar sesión el servidor entrega un token temporal (6 h) guardado en CacheService.
  *    Todas las operaciones administrativas exigen ese token.
- *  - Las operaciones públicas (consultar SU invitación y confirmar) solo funcionan con el ID
- *    individual de cada invitado y nunca devuelven la lista completa.
+ *  - Las operaciones públicas pueden consultar una invitación individual o registrar una respuesta
+ *    de pase general. En el pase general, cada envío crea un invitado y una confirmación propios;
+ *    ninguna operación pública devuelve la lista completa.
  *  - Los pases se leen siempre de la hoja; lo que venga en la URL no cuenta.
  */
 
@@ -28,9 +29,9 @@ var SHEET_GUESTS = 'INVITADOS';
 var SHEET_CONFIRMATIONS = 'CONFIRMACIONES';
 
 var GUEST_HEADERS = ['ID', 'Nombre', 'Pases asignados', 'Enlace personalizado', 'Fecha de creación',
-  'Estado de confirmación', 'Personas confirmadas', 'Última actualización'];
+  'Estado de confirmación', 'Personas confirmadas', 'Última actualización', 'Tipo de invitación'];
 var CONFIRMATION_HEADERS = ['ID de confirmación', 'ID del invitado', 'Nombre', 'Personas confirmadas',
-  'Fecha de confirmación', 'Estado', 'Última actualización', 'Número de cambios'];
+  'Fecha de confirmación', 'Estado', 'Última actualización', 'Número de cambios', 'Clave de envío'];
 
 var STATUS_PENDING = 'Pendiente';
 var STATUS_CONFIRMED = 'Confirmado';
@@ -41,9 +42,8 @@ var MAX_CONFIRMATION_CHANGES = 5; // veces que un invitado puede modificar su co
 var SESSION_SECONDS = 6 * 60 * 60; // duración de la sesión administrativa (máximo de CacheService)
 var LOGIN_MAX_FAILS = 8;          // intentos fallidos antes de bloquear el acceso temporalmente
 var LOGIN_LOCK_SECONDS = 15 * 60;
-var API_VERSION = '1.0.1';
+var API_VERSION = '1.1.0';
 var DB_ID_PROPERTY = 'ALLISON_SPREADSHEET_ID';
-var DEFAULT_ADMIN_PASSWORD = 'allison12345';
 
 /* ============================ PUNTOS DE ENTRADA ============================ */
 
@@ -69,11 +69,13 @@ function doPost(e) {
       case 'login': return login_(body.password);
       case 'logout': return logout_(body.token);
       case 'saveGuest': requireAdmin_(body.token); return saveGuest_(body);
+      case 'deleteGuest': requireAdmin_(body.token); return deleteGuest_(body.id);
       case 'listGuests': requireAdmin_(body.token); return { guests: listGuests_() };
       case 'getGuest': requireAdmin_(body.token); return { guest: adminGuest_(body.id) };
       case 'listConfirmations': requireAdmin_(body.token); return listConfirmations_();
       case 'stats': requireAdmin_(body.token); return { stats: stats_(listGuests_()) };
       case 'confirm': return confirm_(body);
+      case 'confirmGeneral': return confirmGeneral_(body);
       case 'guest': return publicGuest_(body.id);
       case 'ping': return ping_();
       default: throw apiError_('UNKNOWN_ACTION', 'Acción no reconocida.');
@@ -96,15 +98,17 @@ function setup() {
     ensureSheet_(ss, SHEET_GUESTS, GUEST_HEADERS);
     ensureSheet_(ss, SHEET_CONFIRMATIONS, CONFIRMATION_HEADERS);
 
-    // Configuración inicial automática: solo establece la contraseña si aún no existe.
+    // Conserva la contraseña existente. Si falta, genera una temporal aleatoria una sola vez.
     var props = PropertiesService.getScriptProperties();
     if (!props.getProperty('ADMIN_PASSWORD')) {
-      props.setProperty('ADMIN_PASSWORD', DEFAULT_ADMIN_PASSWORD);
+      var generatedPassword = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().slice(0, 8);
+      props.setProperty('ADMIN_PASSWORD', generatedPassword);
+      Logger.log('Se generó una contraseña administrativa temporal. Guárdala ahora: ' + generatedPassword);
     }
   } finally { lock.releaseLock(); }
 
   var msg = 'Configuración completada. Hojas listas: ' + SHEET_GUESTS + ' y ' + SHEET_CONFIRMATIONS +
-    '. Contraseña administrativa inicial configurada (allison12345). ' +
+    '. Columnas adicionales verificadas sin borrar registros existentes. La contraseña administrativa está configurada. ' +
     'Hoja de cálculo: ' + ss.getUrl();
   Logger.log(msg);
   Logger.log('ID de la hoja (guardado automáticamente): ' + ss.getId());
@@ -179,22 +183,23 @@ function saveGuest_(body) {
   var id = body.id ? String(body.id) : newId_();
   if (!isGuestId_(id)) throw apiError_('INVALID_ID', 'Identificador de invitado no válido.');
   var enlace = String(body.enlace || '').trim();
-  if (enlace.length > 600 || !/^(https?|file):\/\//i.test(enlace) || enlace.indexOf('id=' + id) < 0) {
-    throw apiError_('INVALID_LINK', 'El enlace personalizado no es válido o no contiene el identificador del invitado.');
-  }
-
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     var t = table_(SHEET_GUESTS, GUEST_HEADERS);
     var rowIndex = findRow_(t, 'ID', id);
+    var isGeneralRecord = rowIndex >= 0 && String(t.rows[rowIndex][t.col['Tipo de invitación']] || '') === 'Pase general';
+    if (enlace.length > 600 || !/^(https?|file):\/\//i.test(enlace) ||
+        (isGeneralRecord ? !/[?&]general=1(?:&|$)/.test(enlace) : enlace.indexOf('id=' + id) < 0)) {
+      throw apiError_('INVALID_LINK', 'El enlace no corresponde al tipo de invitación de este registro.');
+    }
     var now = new Date();
     if (rowIndex < 0) {
       // Evita duplicados accidentales: mismo nombre con otro ID.
       if (!body.force) {
         var key = nameKey_(nombre);
         for (var i = 0; i < t.rows.length; i++) {
-          if (nameKey_(t.rows[i][t.col['Nombre']]) === key) {
+          if (String(t.rows[i][t.col['Tipo de invitación']] || 'Personalizada') !== 'Pase general' && nameKey_(t.rows[i][t.col['Nombre']]) === key) {
             var existing = guestFromRow_(t, t.rows[i]);
             var err = apiError_('DUPLICATE_NAME', 'Ya existe un invitado con ese nombre.');
             err.data = { existing: existing };
@@ -211,6 +216,7 @@ function saveGuest_(body) {
       row[t.col['Estado de confirmación']] = STATUS_PENDING;
       row[t.col['Personas confirmadas']] = 0;
       row[t.col['Última actualización']] = now;
+      row[t.col['Tipo de invitación']] = 'Personalizada';
       t.sheet.appendRow(row);
       return { created: true, guest: guestFromRow_(t, row) };
     }
@@ -221,6 +227,7 @@ function saveGuest_(body) {
     current[t.col['Pases asignados']] = pases;
     current[t.col['Enlace personalizado']] = sheetText_(enlace);
     current[t.col['Última actualización']] = now;
+    if (!String(current[t.col['Tipo de invitación']] || '').trim()) current[t.col['Tipo de invitación']] = 'Personalizada';
     writeRow_(t, rowIndex, current);
     // Mantiene el nombre de la confirmación sincronizado, si existe.
     var c = table_(SHEET_CONFIRMATIONS, CONFIRMATION_HEADERS);
@@ -234,6 +241,29 @@ function listGuests_() {
   var t = table_(SHEET_GUESTS, GUEST_HEADERS);
   return t.rows.filter(function (r) { return String(r[t.col['ID']]).trim(); })
     .map(function (r) { return guestFromRow_(t, r); });
+}
+
+/** Elimina un registro de invitado y sus confirmaciones relacionadas. Requiere sesión admin. */
+function deleteGuest_(id) {
+  id = String(id || '');
+  if (!isGuestId_(id)) throw apiError_('INVALID_ID', 'Identificador de invitado no válido.');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var guests = table_(SHEET_GUESTS, GUEST_HEADERS);
+    var gi = findRow_(guests, 'ID', id);
+    if (gi < 0) throw apiError_('NOT_FOUND', 'El registro ya no existe o fue eliminado.');
+    var confirmations = table_(SHEET_CONFIRMATIONS, CONFIRMATION_HEADERS);
+    var rowsToDelete = [];
+    for (var i = 0; i < confirmations.rows.length; i++) {
+      if (String(confirmations.rows[i][confirmations.col['ID del invitado']]) === id) rowsToDelete.push(i + 2);
+    }
+    rowsToDelete.sort(function (a, b) { return b - a; }).forEach(function (rowNumber) {
+      confirmations.sheet.deleteRow(rowNumber);
+    });
+    guests.sheet.deleteRow(gi + 2);
+    return { deleted: true, id: id };
+  } finally { lock.releaseLock(); }
 }
 
 function adminGuest_(id) {
@@ -318,6 +348,83 @@ function confirm_(body) {
   } finally { lock.releaseLock(); }
 }
 
+
+/**
+ * Pase general reutilizable:
+ * cada envío válido crea un invitado individual y una confirmación individual.
+ * El enlace es compartido, pero los registros NO se sobrescriben entre sí.
+ * submissionId hace idempotente un reintento de la misma operación.
+ */
+function confirmGeneral_(body) {
+  var nombre = cleanName_(body.nombre);
+  if (!nombre) throw apiError_('INVALID_NAME', 'Escribe tu nombre completo para confirmar.');
+  var personas = toInt_(body.personas);
+  if (!(personas === 0 || personas === 1)) throw apiError_('INVALID_COUNT', 'El pase general corresponde a una sola persona.');
+  var submissionId = String(body.submissionId || '');
+  if (!/^[A-Za-z0-9]{16,64}$/.test(submissionId)) throw apiError_('INVALID_REQUEST', 'No se pudo validar este envío. Actualiza la página e inténtalo de nuevo.');
+  var deadline = PropertiesService.getScriptProperties().getProperty('CONFIRMATION_DEADLINE');
+  if (deadline && new Date() > new Date(deadline)) throw apiError_('CLOSED', 'El periodo de confirmación ya terminó.');
+
+  var enlace = String(body.enlace || '').trim();
+  if (enlace.length > 600 || !/^https:\/\/\S+/i.test(enlace) || !/[?&]general=1(?:&|$)/.test(enlace)) {
+    throw apiError_('INVALID_LINK', 'El enlace de pase general no es válido.');
+  }
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var guests = table_(SHEET_GUESTS, GUEST_HEADERS);
+    var confirmations = table_(SHEET_CONFIRMATIONS, CONFIRMATION_HEADERS);
+
+    // Si el navegador repite la misma solicitud tras una demora, devolver el registro previo.
+    var previousIndex = findRow_(confirmations, 'Clave de envío', submissionId);
+    if (previousIndex >= 0) {
+      var previous = confirmationFromRow_(confirmations, confirmations.rows[previousIndex]);
+      var previousGuestIndex = findRow_(guests, 'ID', previous.invitadoId);
+      if (previousGuestIndex >= 0) {
+        return {
+          duplicateRequest: true,
+          guest: guestFromRow_(guests, guests.rows[previousGuestIndex]),
+          confirmation: previous
+        };
+      }
+    }
+
+    var now = new Date();
+    var id = newId_();
+    var estado = personas === 1 ? STATUS_CONFIRMED : STATUS_DECLINED;
+    var guestRow = blankRow_(guests);
+    guestRow[guests.col['ID']] = id;
+    guestRow[guests.col['Nombre']] = sheetText_(nombre);
+    guestRow[guests.col['Pases asignados']] = 1;
+    guestRow[guests.col['Enlace personalizado']] = sheetText_(enlace);
+    guestRow[guests.col['Fecha de creación']] = now;
+    guestRow[guests.col['Estado de confirmación']] = estado;
+    guestRow[guests.col['Personas confirmadas']] = personas;
+    guestRow[guests.col['Última actualización']] = now;
+    guestRow[guests.col['Tipo de invitación']] = 'Pase general';
+    guests.sheet.appendRow(guestRow);
+
+    var confirmationRow = blankRow_(confirmations);
+    confirmationRow[confirmations.col['ID de confirmación']] = 'C-' + newId_();
+    confirmationRow[confirmations.col['ID del invitado']] = id;
+    confirmationRow[confirmations.col['Nombre']] = sheetText_(nombre);
+    confirmationRow[confirmations.col['Personas confirmadas']] = personas;
+    confirmationRow[confirmations.col['Fecha de confirmación']] = now;
+    confirmationRow[confirmations.col['Estado']] = estado;
+    confirmationRow[confirmations.col['Última actualización']] = now;
+    confirmationRow[confirmations.col['Número de cambios']] = 0;
+    confirmationRow[confirmations.col['Clave de envío']] = submissionId;
+    confirmations.sheet.appendRow(confirmationRow);
+
+    return {
+      duplicateRequest: false,
+      guest: guestFromRow_(guests, guestRow),
+      confirmation: confirmationFromRow_(confirmations, confirmationRow)
+    };
+  } finally { lock.releaseLock(); }
+}
+
 function listConfirmations_() {
   var guests = listGuests_();
   var c = table_(SHEET_CONFIRMATIONS, CONFIRMATION_HEADERS);
@@ -325,7 +432,7 @@ function listConfirmations_() {
   c.rows.forEach(function (r) { var k = String(r[c.col['ID del invitado']]); if (k) byGuest[k] = confirmationFromRow_(c, r); });
   var list = guests.map(function (g) {
     var conf = byGuest[g.id] || null;
-    return { id: g.id, nombre: g.nombre, pases: g.pases, estado: g.estado, personas: g.personas,
+    return { id: g.id, nombre: g.nombre, pases: g.pases, estado: g.estado, personas: g.personas, tipo: g.tipo,
       fechaConfirmacion: conf ? conf.fecha : '', actualizado: conf ? conf.actualizado : '', cambios: conf ? conf.cambios : 0 };
   });
   return { confirmations: list, stats: stats_(guests) };
@@ -414,7 +521,8 @@ function guestFromRow_(t, r) {
     creado: iso_(r[t.col['Fecha de creación']]),
     estado: String(r[t.col['Estado de confirmación']] || STATUS_PENDING),
     personas: toInt_(r[t.col['Personas confirmadas']]) || 0,
-    actualizado: iso_(r[t.col['Última actualización']])
+    actualizado: iso_(r[t.col['Última actualización']]),
+    tipo: String(r[t.col['Tipo de invitación']] || 'Personalizada')
   };
 }
 
@@ -427,7 +535,8 @@ function confirmationFromRow_(c, r) {
     fecha: iso_(r[c.col['Fecha de confirmación']]),
     estado: String(r[c.col['Estado']]),
     actualizado: iso_(r[c.col['Última actualización']]),
-    cambios: toInt_(r[c.col['Número de cambios']]) || 0
+    cambios: toInt_(r[c.col['Número de cambios']]) || 0,
+    submissionId: String(r[c.col['Clave de envío']] || '')
   };
 }
 

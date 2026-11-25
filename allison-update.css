@@ -111,3 +111,29 @@ body.allison-modal-open { overflow:hidden; }
  .allison-tab { padding:8px 6px; font-size:10.5px; letter-spacing:0; }
  .allison-row-actions .allison-btn-sm { flex:1 1 100%; }
 }
+
+
+/* Pase general reutilizable y acciones administrativas */
+.allison-general-pass {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:16px;
+  border:1px solid #e4c9bd;
+  border-radius:16px;
+  background:rgba(255,249,245,.88);
+}
+.allison-general-pass .allison-subtitle { margin:0; text-align:left; }
+.allison-general-pass .allison-help { margin:0; }
+.allison-btn-danger {
+  border-color:#c58b89;
+  background:#f7e7e3;
+  color:#934d52;
+}
+.allison-btn-danger:hover { background:#f0d9d3; }
+.allison-table td:nth-child(2), .allison-table th:nth-child(2) { text-align:center; }
+.allison-table td:nth-child(2) { font-size:11px; }
+@media (max-width:480px) {
+  .allison-general-pass { padding:12px; }
+  .allison-general-pass .allison-btn { width:100%; }
+}
