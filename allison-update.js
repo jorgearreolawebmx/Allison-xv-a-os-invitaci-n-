@@ -101,9 +101,9 @@
     invitationLayers.forEach(function (layer) {
       layer.style.transform = 'translateY(' + passIntroHeight + 'px)';
     });
-    // Espacio para MIS PADRES y MI MADRINA justo después del cronómetro: solo se bajan los objetos
-    // originales situados debajo del marco del cronómetro (portada, fecha, mensaje y cronómetro no se mueven).
-    var familyBlockHeight = 1200, afterCountdownY = 1920;
+    // Espacio para la sección de MI MADRINA justo después del cronómetro.
+    // Se conserva intacta la posición del cronómetro y se reserva un solo bloque de 600 px.
+    var familyBlockHeight = 600, afterCountdownY = 1920;
     var paletteGapCut = 120, giftY = 5500;   // acorta el hueco entre la paleta de colores y el marco del regalo
     var endLift = rsvpGapCut + (1400 - familyBlockHeight) + paletteGapCut;
     invitation.querySelectorAll(':scope > .iv-layer > .iv-obj').forEach(function (obj) {
@@ -149,8 +149,9 @@
       section.appendChild(img); section.appendChild(heading); section.appendChild(name);
       invitation.appendChild(section);
     }
-    personSection(2660 - shiftUp, 'assets/padres_allison.webp', 'MIS PADRES', 'Ana Hernández Alarcón  ·  Víctor Portilla García', 'parents');
-    personSection(2660 + 600 - shiftUp, 'assets/madrina_allison.webp', 'MI MADRINA', 'Isidora García Ortiz', 'godmother');
+    // Se omite por completo el apartado de los padres a petición de la familia.
+    // La madrina ocupa el primer bloque, inmediatamente después del cronómetro.
+    personSection(2660 - shiftUp, 'assets/madrina_allison.webp', 'MI MADRINA', 'Isidora García Ortiz', 'godmother');
 
     // Mensaje final de agradecimiento, después de todas las secciones originales.
     var thanks = el('p', 'allison-thanks-message', '«Gracias por acompañarnos en este día tan especial».');
