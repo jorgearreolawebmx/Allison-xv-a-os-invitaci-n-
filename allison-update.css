@@ -7,6 +7,11 @@
 .allison-person-title { margin:4px 0 18px; color:#9a555b; font:600 44px/1.1 Georgia,serif; letter-spacing:.08em; }
 .allison-person-name { max-width:900px; margin:0; color:#77454a; font:34px/1.4 Georgia,serif; }
 .allison-person-section.godmother .allison-person-art { width:450px; }
+/* Padres: bloque independiente, solo texto y nombres apilados al centro. */
+.allison-parents-section { position:absolute; left:70px; width:940px; height:260px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; color:#8e4c50; pointer-events:none; }
+.allison-parents-title { margin:0; color:#9a555b; font:600 44px/1.1 Georgia,serif; letter-spacing:.08em; }
+.allison-parents-names { width:100%; display:flex; flex-direction:column; align-items:center; gap:5px; }
+.allison-parent-name { max-width:900px; margin:0; padding:0 18px; color:#77454a; font:34px/1.2 Georgia,serif; text-align:center; overflow-wrap:anywhere; }
 #iv-content.allison-trimmed { height:var(--allison-content-h) !important; }
 .allison-thanks-message { position:absolute; left:170px; top:10965px; width:740px; margin:0; text-align:center; color:#8e4c50; font:italic 48px/1.4 Georgia,serif; letter-spacing:.02em; pointer-events:none; }
 .allison-pass-section { position:absolute; left:405px; width:270px; height:180px; }
@@ -59,6 +64,9 @@ body.allison-modal-open { overflow:hidden; }
  .allison-person-art { width:430px; height:400px; }
  .allison-person-title { font-size:40px; }
  .allison-person-name { padding:0 28px; font-size:30px; }
+ .allison-parents-section { left:35px; width:1010px; }
+ .allison-parents-title { font-size:40px; }
+ .allison-parent-name { padding:0 28px; font-size:30px; }
  .allison-thanks-message { left:150px; width:780px; }
  .allison-pass-number { font-size:34px; }
  .allison-pass-guest { font-size:22px; }

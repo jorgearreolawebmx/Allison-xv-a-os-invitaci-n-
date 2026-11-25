@@ -103,7 +103,7 @@
     });
     // Espacio para la sección de MI MADRINA justo después del cronómetro.
     // Se conserva intacta la posición del cronómetro y se reserva un solo bloque de 600 px.
-    var familyBlockHeight = 600, afterCountdownY = 1920;
+    var familyBlockHeight = 860, afterCountdownY = 1920; // 260 px para los padres + 600 px para la madrina
     var paletteGapCut = 120, giftY = 5500;   // acorta el hueco entre la paleta de colores y el marco del regalo
     var endLift = rsvpGapCut + (1400 - familyBlockHeight) + paletteGapCut;
     invitation.querySelectorAll(':scope > .iv-layer > .iv-obj').forEach(function (obj) {
@@ -149,9 +149,19 @@
       section.appendChild(img); section.appendChild(heading); section.appendChild(name);
       invitation.appendChild(section);
     }
-    // Se omite por completo el apartado de los padres a petición de la familia.
-    // La madrina ocupa el primer bloque, inmediatamente después del cronómetro.
-    personSection(2660 - shiftUp, 'assets/madrina_allison.webp', 'MI MADRINA', 'Isidora García Ortiz', 'godmother');
+    function parentsSection(top, names) {
+      var section = el('section', 'allison-parents-section');
+      section.style.top = top + 'px';
+      section.appendChild(el('h2', 'allison-parents-title', 'MIS PADRES'));
+      var list = el('div', 'allison-parents-names');
+      names.forEach(function (name) { list.appendChild(el('p', 'allison-parent-name', name)); });
+      section.appendChild(list);
+      invitation.appendChild(section);
+    }
+    // Los padres aparecen primero, sin imagen ni icono, con cada nombre en una línea centrada.
+    // La madrina conserva su imagen y queda en un bloque separado inmediatamente debajo.
+    parentsSection(2660 - shiftUp, ['Ana Hernández Alarcón', 'Victor Portilla Garcia']);
+    personSection(2920 - shiftUp, 'assets/madrina_allison.webp', 'MI MADRINA', 'Isidora García Ortiz', 'godmother');
 
     // Mensaje final de agradecimiento, después de todas las secciones originales.
     var thanks = el('p', 'allison-thanks-message', '«Gracias por acompañarnos en este día tan especial».');
@@ -712,7 +722,7 @@
     // Usa translate/scale/opacity para no interferir con rotaciones ni efectos originales.
     if (!reduceMotion && 'IntersectionObserver' in window) {
       var scaleIds = envelopeIds.concat(['iv-image_tt8fuinho', 'iv-image_naqbaz8nq', 'iv-image_cu3zne32r', 'iv-image_g0xsq7mpq']);
-      var targets = Array.prototype.slice.call(invitation.querySelectorAll(':scope > .iv-layer > .iv-obj, .allison-person-section, .allison-thanks-message, .allison-pass-section, .allison-guest-greeting'))
+      var targets = Array.prototype.slice.call(invitation.querySelectorAll(':scope > .iv-layer > .iv-obj, .allison-person-section, .allison-parents-section, .allison-thanks-message, .allison-pass-section, .allison-guest-greeting'))
         .filter(function (n) { return !n.hidden && !n.classList.contains('iv-music'); });
       targets.forEach(function (n) { n.classList.add('allison-reveal'); if (scaleIds.indexOf(n.id) >= 0) n.classList.add('allison-reveal-scale'); });
       var revealObserver = new IntersectionObserver(function (entries) {

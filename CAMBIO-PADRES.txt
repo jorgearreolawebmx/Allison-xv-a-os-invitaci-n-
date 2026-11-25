@@ -1,0 +1,13 @@
+CAMBIO DE INVITACIÓN — PADRES DE ALLISON
+
+- Se agregó un bloque de texto "MIS PADRES" antes del bloque de la madrina.
+- Los nombres aparecen centrados y apilados, en líneas independientes:
+  Ana Hernández Alarcón
+  Victor Portilla Garcia
+- La sección de los padres no utiliza imagen ni icono.
+- La sección "MI MADRINA" conserva su imagen y nombre, ahora debajo y separada.
+- Se amplió el espacio reservado para ambos bloques y se actualizaron los cálculos
+  de desplazamiento del contenido posterior.
+- No se modificó Code.gs ni la configuración del backend de Google Apps Script.
+
+Archivos modificados: allison-update.js y allison-update.css.
