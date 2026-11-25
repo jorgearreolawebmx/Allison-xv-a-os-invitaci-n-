@@ -8,7 +8,7 @@ window.ALLISON_CONFIG = {
    *    Ejemplo de formato: 'https://script.google.com/macros/s/XXXXXXXX/exec'
    *    Mientras esté vacía, el panel funciona solo como generador de enlaces
    *    y NO guarda invitados ni confirmaciones. */
-  APPS_SCRIPT_URL: '',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzKX9Yv-wA-e_2zwbN-9W0LOz1uSx5mxK-bBQb_E87uatWQIXj0MaiMrlzwzKJwHJ3Rfw/exec',
 
   /* 2) (Opcional) Dirección pública donde publicarás la invitación, por ejemplo
    *    'https://mi-sitio.com/allison/index.html'. Se usa para armar los enlaces
