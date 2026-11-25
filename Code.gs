@@ -42,7 +42,7 @@ var MAX_CONFIRMATION_CHANGES = 5; // veces que un invitado puede modificar su co
 var SESSION_SECONDS = 6 * 60 * 60; // duración de la sesión administrativa (máximo de CacheService)
 var LOGIN_MAX_FAILS = 8;          // intentos fallidos antes de bloquear el acceso temporalmente
 var LOGIN_LOCK_SECONDS = 15 * 60;
-var API_VERSION = '1.1.0';
+var API_VERSION = '1.2.0';
 var DB_ID_PROPERTY = 'ALLISON_SPREADSHEET_ID';
 
 /* ============================ PUNTOS DE ENTRADA ============================ */
@@ -54,6 +54,7 @@ function doGet(e) {
     switch (p.action) {
       case 'ping': return ping_();
       case 'guest': return publicGuest_(p.id);
+      case 'generalGuest': return publicGeneralGuest_(p.id);
       default: throw apiError_('UNKNOWN_ACTION', 'Acción no reconocida.');
     }
   });
@@ -284,6 +285,17 @@ function publicGuest_(id) {
   return { guest: { id: g.id, nombre: g.nombre, pases: g.pases, estado: g.estado, personas: g.personas } };
 }
 
+/** Recupera únicamente una respuesta de PASE GENERAL para permitir que su titular la actualice. */
+function publicGeneralGuest_(id) {
+  if (!isGuestId_(id)) throw apiError_('INVALID_ID', 'Enlace personal no válido.');
+  var t = table_(SHEET_GUESTS, GUEST_HEADERS);
+  var i = findRow_(t, 'ID', id);
+  if (i < 0) throw apiError_('NOT_FOUND', 'No encontramos esta respuesta. Verifica tu enlace personal.');
+  var g = guestFromRow_(t, t.rows[i]);
+  if (g.tipo !== 'Pase general') throw apiError_('NOT_GENERAL', 'Este enlace no corresponde a un pase general.');
+  return { guest: { id: g.id, nombre: g.nombre, pases: 1, estado: g.estado, personas: g.personas, tipo: g.tipo } };
+}
+
 /* ============================ CONFIRMACIONES ============================ */
 
 /** Registra o actualiza la confirmación de un invitado (una fila por invitado). */
@@ -376,7 +388,7 @@ function confirmGeneral_(body) {
     var guests = table_(SHEET_GUESTS, GUEST_HEADERS);
     var confirmations = table_(SHEET_CONFIRMATIONS, CONFIRMATION_HEADERS);
 
-    // Si el navegador repite la misma solicitud tras una demora, devolver el registro previo.
+    // Idempotencia: si el mismo envío se repite por un fallo de red, devolver el resultado anterior.
     var previousIndex = findRow_(confirmations, 'Clave de envío', submissionId);
     if (previousIndex >= 0) {
       var previous = confirmationFromRow_(confirmations, confirmations.rows[previousIndex]);
@@ -384,6 +396,7 @@ function confirmGeneral_(body) {
       if (previousGuestIndex >= 0) {
         return {
           duplicateRequest: true,
+          updated: !!body.id,
           guest: guestFromRow_(guests, guests.rows[previousGuestIndex]),
           confirmation: previous
         };
@@ -391,36 +404,93 @@ function confirmGeneral_(body) {
     }
 
     var now = new Date();
-    var id = newId_();
     var estado = personas === 1 ? STATUS_CONFIRMED : STATUS_DECLINED;
-    var guestRow = blankRow_(guests);
-    guestRow[guests.col['ID']] = id;
-    guestRow[guests.col['Nombre']] = sheetText_(nombre);
-    guestRow[guests.col['Pases asignados']] = 1;
-    guestRow[guests.col['Enlace personalizado']] = sheetText_(enlace);
-    guestRow[guests.col['Fecha de creación']] = now;
-    guestRow[guests.col['Estado de confirmación']] = estado;
-    guestRow[guests.col['Personas confirmadas']] = personas;
-    guestRow[guests.col['Última actualización']] = now;
-    guestRow[guests.col['Tipo de invitación']] = 'Pase general';
-    guests.sheet.appendRow(guestRow);
+    var recordId = String(body.id || '').trim();
 
-    var confirmationRow = blankRow_(confirmations);
-    confirmationRow[confirmations.col['ID de confirmación']] = 'C-' + newId_();
-    confirmationRow[confirmations.col['ID del invitado']] = id;
-    confirmationRow[confirmations.col['Nombre']] = sheetText_(nombre);
-    confirmationRow[confirmations.col['Personas confirmadas']] = personas;
-    confirmationRow[confirmations.col['Fecha de confirmación']] = now;
-    confirmationRow[confirmations.col['Estado']] = estado;
-    confirmationRow[confirmations.col['Última actualización']] = now;
-    confirmationRow[confirmations.col['Número de cambios']] = 0;
-    confirmationRow[confirmations.col['Clave de envío']] = submissionId;
-    confirmations.sheet.appendRow(confirmationRow);
+    // ACTUALIZACIÓN: un enlace personal (registro=ID) solo puede modificar su propio pase general.
+    if (recordId) {
+      if (!isGuestId_(recordId)) throw apiError_('INVALID_ID', 'El enlace personal no es válido.');
+      var gi = findRow_(guests, 'ID', recordId);
+      if (gi < 0) throw apiError_('NOT_FOUND', 'No encontramos tu respuesta guardada.');
+      var guestRow = guests.rows[gi];
+      if (String(guestRow[guests.col['Tipo de invitación']] || '') !== 'Pase general') {
+        throw apiError_('NOT_GENERAL', 'Esta respuesta no pertenece a un pase general.');
+      }
+      var existingName = String(guestRow[guests.col['Nombre']] || '');
+      var cIndex = findRow_(confirmations, 'ID del invitado', recordId);
+      var confirmationRow;
+      var updated = true;
+      if (cIndex >= 0) {
+        confirmationRow = confirmations.rows[cIndex];
+        var oldPeople = toInt_(confirmationRow[confirmations.col['Personas confirmadas']]);
+        var oldState = String(confirmationRow[confirmations.col['Estado']] || '');
+        var oldName = String(confirmationRow[confirmations.col['Nombre']] || '');
+        var changed = oldPeople !== personas || oldState !== estado || oldName !== nombre;
+        confirmationRow[confirmations.col['Nombre']] = sheetText_(nombre);
+        confirmationRow[confirmations.col['Personas confirmadas']] = personas;
+        confirmationRow[confirmations.col['Estado']] = estado;
+        confirmationRow[confirmations.col['Última actualización']] = now;
+        confirmationRow[confirmations.col['Clave de envío']] = submissionId;
+        if (changed) confirmationRow[confirmations.col['Número de cambios']] = (toInt_(confirmationRow[confirmations.col['Número de cambios']]) || 0) + 1;
+        writeRow_(confirmations, cIndex, confirmationRow);
+      } else {
+        confirmationRow = blankRow_(confirmations);
+        confirmationRow[confirmations.col['ID de confirmación']] = 'C-' + newId_();
+        confirmationRow[confirmations.col['ID del invitado']] = recordId;
+        confirmationRow[confirmations.col['Nombre']] = sheetText_(nombre);
+        confirmationRow[confirmations.col['Personas confirmadas']] = personas;
+        confirmationRow[confirmations.col['Fecha de confirmación']] = now;
+        confirmationRow[confirmations.col['Estado']] = estado;
+        confirmationRow[confirmations.col['Última actualización']] = now;
+        confirmationRow[confirmations.col['Número de cambios']] = 1;
+        confirmationRow[confirmations.col['Clave de envío']] = submissionId;
+        confirmations.sheet.appendRow(confirmationRow);
+        cIndex = confirmations.rows.length;
+      }
+      guestRow[guests.col['Nombre']] = sheetText_(nombre);
+      guestRow[guests.col['Estado de confirmación']] = estado;
+      guestRow[guests.col['Personas confirmadas']] = personas;
+      guestRow[guests.col['Última actualización']] = now;
+      writeRow_(guests, gi, guestRow);
+      return {
+        duplicateRequest: false,
+        updated: updated,
+        guest: guestFromRow_(guests, guestRow),
+        confirmation: confirmationFromRow_(confirmations, confirmationRow)
+      };
+    }
+
+    // ALTA NUEVA: el enlace general es compartido, pero cada envío crea una persona independiente.
+    var id = newId_();
+    var newGuestRow = blankRow_(guests);
+    newGuestRow[guests.col['ID']] = id;
+    newGuestRow[guests.col['Nombre']] = sheetText_(nombre);
+    newGuestRow[guests.col['Pases asignados']] = 1;
+    newGuestRow[guests.col['Enlace personalizado']] = sheetText_(enlace);
+    newGuestRow[guests.col['Fecha de creación']] = now;
+    newGuestRow[guests.col['Estado de confirmación']] = estado;
+    newGuestRow[guests.col['Personas confirmadas']] = personas;
+    newGuestRow[guests.col['Última actualización']] = now;
+    newGuestRow[guests.col['Tipo de invitación']] = 'Pase general';
+    guests.sheet.appendRow(newGuestRow);
+
+    var newConfirmationRow = blankRow_(confirmations);
+    newConfirmationRow[confirmations.col['ID de confirmación']] = 'C-' + newId_();
+    newConfirmationRow[confirmations.col['ID del invitado']] = id;
+    newConfirmationRow[confirmations.col['Nombre']] = sheetText_(nombre);
+    newConfirmationRow[confirmations.col['Personas confirmadas']] = personas;
+    newConfirmationRow[confirmations.col['Fecha de confirmación']] = now;
+    newConfirmationRow[confirmations.col['Estado']] = estado;
+    newConfirmationRow[confirmations.col['Última actualización']] = now;
+    newConfirmationRow[confirmations.col['Número de cambios']] = 0;
+    newConfirmationRow[confirmations.col['Clave de envío']] = submissionId;
+    confirmations.sheet.appendRow(newConfirmationRow);
 
     return {
       duplicateRequest: false,
-      guest: guestFromRow_(guests, guestRow),
-      confirmation: confirmationFromRow_(confirmations, confirmationRow)
+      updated: false,
+      guest: guestFromRow_(guests, newGuestRow),
+      confirmation: confirmationFromRow_(confirmations, newConfirmationRow)
     };
   } finally { lock.releaseLock(); }
 }

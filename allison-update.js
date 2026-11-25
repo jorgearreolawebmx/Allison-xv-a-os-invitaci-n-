@@ -56,7 +56,9 @@
     var passCount = Math.max(1, Math.min(20, parseInt(params.get('pases') || '0', 10) || 0));
     var guestId = (params.get('id') || '').trim();
     var generalPass = params.get('general') === '1';
+    var generalRecordId = (params.get('registro') || '').trim();
     if (!/^[A-Za-z0-9]{12,32}$/.test(guestId)) guestId = '';
+    if (!/^[A-Za-z0-9]{12,32}$/.test(generalRecordId)) generalRecordId = '';
     // Enlaces personalizados usan un ID del servidor; el pase general es un enlace compartido que crea un registro por persona.
     var serverGuest = !!(guestId && BACKEND);
     if (generalPass) { guestName = 'PASE GENERAL'; passCount = 1; }
@@ -227,51 +229,146 @@
         box.appendChild(button('REINTENTAR', 'allison-btn', function () { guestLoad = null; openServerRsvp(); }));
       });
     }
-    // Pase general reutilizable: cada persona introduce su nombre y genera SU propio registro en Sheets.
+    // Pase general reutilizable: cada persona registra una respuesta propia.
+    // Tras guardar, recibe un enlace individual para poder cambiar su respuesta más adelante.
     function openGeneralRsvp() {
       var box = el('div', 'allison-form');
-      box.appendChild(el('h2', '', 'CONFIRMA TU ASISTENCIA'));
-      box.appendChild(el('p', 'allison-note allison-center', 'Este enlace es compartido. Cada persona debe registrar su nombre por separado. El pase general corresponde a una persona.'));
-      var f = makeField('Tu nombre completo', 'Escribe tu nombre y apellidos');
-      box.appendChild(f.wrap);
-      var status = el('p', 'allison-error', '');
-      status.setAttribute('role', 'status');
-      box.appendChild(status);
-      var requestId = randomId(24);
-      function submit(personas, trigger) {
-        var nombre = f.input.value.replace(/\s+/g, ' ').trim();
-        if (!nombre) { f.input.focus(); f.input.setAttribute('aria-invalid', 'true'); return; }
-        f.input.removeAttribute('aria-invalid');
-        if (!BACKEND) {
-          status.textContent = 'La confirmación no se puede guardar porque el servidor todavía no está conectado.';
-          return;
-        }
-        trigger.disabled = true; trigger.textContent = 'REGISTRANDO…'; status.textContent = '';
-        api('confirmGeneral', { nombre: nombre, personas: personas, submissionId: requestId, enlace: generalPublicUrl() }).then(function (res) {
-          box.replaceChildren(el('h2', '', personas === 1 ? '¡GRACIAS POR CONFIRMAR!' : 'RESPUESTA REGISTRADA'));
-          box.appendChild(el('p', 'allison-status is-ok', personas === 1
-            ? 'Tu asistencia quedó registrada correctamente. Confirmamos 1 persona.'
-            : 'Registramos que no podrás asistir. Gracias por avisarnos.'));
-          if (personas === 1) {
-            var msg = 'Hola, soy ' + nombre + '. Confirmo mi asistencia a los XV años de Allison Abril (1 persona).';
-            box.appendChild(button('AVISAR TAMBIÉN POR WHATSAPP', 'allison-btn', function () {
-              window.open(waLink(msg), '_blank', 'noopener,noreferrer');
-            }));
-            box.appendChild(el('p', 'allison-help allison-center', 'Opcional. WhatsApp se abrirá con el mensaje listo; recuerda pulsar «Enviar».'));
-          }
-        }, function (err) {
-          trigger.disabled = false;
-          trigger.textContent = personas === 1 ? 'CONFIRMAR MI ASISTENCIA' : 'NO PODRÉ ASISTIR';
-          status.textContent = err.message + ' No se registró la respuesta.';
-        });
-      }
-      box.appendChild(button('CONFIRMAR MI ASISTENCIA', 'allison-btn allison-btn-primary', function () {
-        submit(1, this);
-      }));
-      box.appendChild(button('NO PODRÉ ASISTIR', 'allison-btn', function () {
-        submit(0, this);
-      }));
       showModal(box);
+
+      function makePersonalUrl(id) {
+        var u = new URL(generalPublicUrl());
+        u.searchParams.set('registro', id);
+        return u.href;
+      }
+
+      function renderSuccess(g) {
+        var attending = g.estado === 'Confirmado';
+        var personalUrl = makePersonalUrl(g.id);
+        // Conserva el ID en esta sesión y en la URL para volver a abrir el mismo registro.
+        generalRecordId = g.id;
+        try { history.replaceState({}, '', personalUrl); } catch (ignore) {}
+        box.replaceChildren(el('h2', '', attending ? '¡GRACIAS POR CONFIRMAR!' : 'RESPUESTA REGISTRADA'));
+        box.appendChild(el('p', 'allison-status is-ok', attending
+          ? 'Tu asistencia quedó registrada correctamente.'
+          : 'Registramos que no podrás asistir. Gracias por avisarnos.'));
+        box.appendChild(el('p', 'allison-help allison-center', attending
+          ? g.nombre + ': confirmaste que SÍ asistirás a los XV años de Allison Abril (1 persona).'
+          : g.nombre + ': confirmaste que NO podrás asistir a los XV años de Allison Abril.'));
+        var linkField = el('input', 'allison-generated-url');
+        linkField.type = 'text'; linkField.readOnly = true; linkField.value = personalUrl;
+        linkField.setAttribute('aria-label', 'Enlace personal para cambiar tu respuesta');
+        box.appendChild(linkField);
+        var copyStatus = el('p', 'allison-copy-status', 'Guarda este enlace si después necesitas cambiar tu respuesta.');
+        box.appendChild(button('COPIAR MI ENLACE PERSONAL', 'allison-btn', function () {
+          copyWithFeedback(personalUrl, copyStatus, linkField);
+        }));
+        box.appendChild(copyStatus);
+
+        var message = attending
+          ? 'Hola, soy ' + g.nombre + '. Confirmo que SÍ asistiré a los XV años de Allison Abril (1 persona).'
+          : 'Hola, soy ' + g.nombre + '. Confirmo que NO podré asistir a los XV años de Allison Abril.';
+        message += '\nMi enlace personal para actualizar mi respuesta: ' + personalUrl;
+        box.appendChild(button('ENVIAR RESPUESTA POR WHATSAPP', 'allison-btn allison-btn-primary', function () {
+          window.open(waLink(message), '_blank', 'noopener,noreferrer');
+        }));
+        box.appendChild(button('CAMBIAR MI RESPUESTA', 'allison-btn', function () {
+          renderGeneralForm(g);
+        }));
+        box.appendChild(el('p', 'allison-help allison-center', 'Puedes volver a este enlace personal para cambiar tu respuesta. WhatsApp se abrirá con el mensaje listo; recuerda pulsar «Enviar».'));
+      }
+
+      function renderGeneralForm(existingGuest) {
+        box.replaceChildren(el('h2', '', 'CONFIRMA TU ASISTENCIA'));
+        if (existingGuest) {
+          box.appendChild(el('p', 'allison-note allison-center', 'Esta es tu respuesta guardada. Puedes cambiarla cuando lo necesites.'));
+        } else {
+          box.appendChild(el('p', 'allison-note allison-center', 'Este enlace es compartido. Cada persona debe registrar su nombre por separado. El pase general corresponde a una persona.'));
+        }
+
+        var field = makeField('Tu nombre completo', 'Escribe tu nombre y apellidos');
+        if (existingGuest) field.input.value = existingGuest.nombre || '';
+        box.appendChild(field.wrap);
+
+        var choiceLabel = el('p', 'allison-choice-label', '¿Asistirás a los XV años de Allison Abril?');
+        box.appendChild(choiceLabel);
+        var choice = existingGuest ? (existingGuest.estado === 'Confirmado' ? 1 : 0) : null;
+        var switchWrap = el('div', 'allison-attendance-switch');
+        switchWrap.setAttribute('role', 'group');
+        switchWrap.setAttribute('aria-label', 'Selecciona si asistirás');
+        switchWrap.setAttribute('aria-describedby', 'allison-attendance-help');
+        var thumb = el('span', 'allison-attendance-thumb');
+        var noBtn = button('NO PODRÉ ASISTIR', 'allison-attendance-option', function () { setChoice(0); });
+        var yesBtn = button('SÍ ASISTIRÉ', 'allison-attendance-option', function () { setChoice(1); });
+        noBtn.setAttribute('aria-pressed', 'false');
+        yesBtn.setAttribute('aria-pressed', 'false');
+        switchWrap.appendChild(thumb); switchWrap.appendChild(noBtn); switchWrap.appendChild(yesBtn);
+        box.appendChild(switchWrap);
+        var choiceHint = el('p', 'allison-help allison-center', choice === null ? 'Desliza el selector o toca una opción para elegir tu respuesta.' : (choice ? 'Seleccionaste: SÍ asistiré.' : 'Seleccionaste: NO podré asistir.'));
+        choiceHint.id = 'allison-attendance-help'; choiceHint.setAttribute('aria-live', 'polite');
+        box.appendChild(choiceHint);
+
+        function setChoice(value) {
+          choice = value;
+          switchWrap.classList.toggle('is-yes', value === 1);
+          switchWrap.classList.toggle('is-no', value === 0);
+          noBtn.classList.toggle('is-selected', value === 0);
+          yesBtn.classList.toggle('is-selected', value === 1);
+          noBtn.setAttribute('aria-pressed', value === 0 ? 'true' : 'false');
+          yesBtn.setAttribute('aria-pressed', value === 1 ? 'true' : 'false');
+          choiceHint.textContent = value === 1 ? 'Seleccionaste: SÍ asistiré.' : 'Seleccionaste: NO podré asistir.';
+        }
+        switchWrap.addEventListener('pointerup', function (ev) {
+          var rect = switchWrap.getBoundingClientRect();
+          if (rect.width) setChoice(ev.clientX < rect.left + rect.width / 2 ? 0 : 1);
+        });
+        switchWrap.addEventListener('keydown', function (ev) {
+          if (ev.key === 'ArrowLeft') { ev.preventDefault(); setChoice(0); noBtn.focus(); }
+          if (ev.key === 'ArrowRight') { ev.preventDefault(); setChoice(1); yesBtn.focus(); }
+        });
+        if (choice !== null) setChoice(choice);
+
+        var status = el('p', 'allison-status is-error', '');
+        status.setAttribute('role', 'status');
+        box.appendChild(status);
+        var submitButton = button(existingGuest ? 'ACTUALIZAR MI RESPUESTA' : 'GUARDAR MI RESPUESTA', 'allison-btn allison-btn-primary', submit);
+        box.appendChild(submitButton);
+
+        var submissionId = randomId(24);
+        function submit() {
+          var nombre = field.input.value.replace(/\s+/g, ' ').trim();
+          if (!nombre) { field.input.focus(); field.input.setAttribute('aria-invalid', 'true'); status.textContent = 'Escribe tu nombre completo.'; return; }
+          field.input.removeAttribute('aria-invalid');
+          if (choice !== 0 && choice !== 1) { status.textContent = 'Selecciona si SÍ asistirás o NO podrás asistir.'; return; }
+          if (!BACKEND) { status.textContent = 'La respuesta no se puede guardar porque el servidor todavía no está conectado.'; return; }
+          submitButton.disabled = true; submitButton.textContent = 'GUARDANDO…'; status.textContent = '';
+          var payload = { nombre: nombre, personas: choice, submissionId: submissionId, enlace: generalPublicUrl() };
+          if (existingGuest && existingGuest.id) payload.id = existingGuest.id;
+          api('confirmGeneral', payload).then(function (res) {
+            // Cada modificación recibe una nueva clave de envío; un reintento de red conserva la misma.
+            submissionId = randomId(24);
+            renderSuccess(res.guest);
+          }, function (err) {
+            submitButton.disabled = false;
+            submitButton.textContent = existingGuest ? 'ACTUALIZAR MI RESPUESTA' : 'GUARDAR MI RESPUESTA';
+            status.textContent = err.message + ' Tu respuesta no se modificó.';
+          });
+        }
+      }
+
+      if (generalRecordId) {
+        box.appendChild(el('p', 'allison-help allison-center', 'Cargando tu respuesta guardada…'));
+        api('generalGuest', { id: generalRecordId }, true).then(function (res) {
+          renderGeneralForm(res.guest);
+        }, function (err) {
+          box.replaceChildren(el('h2', '', 'CONFIRMA TU ASISTENCIA'));
+          box.appendChild(el('p', 'allison-status is-error', err.message));
+          box.appendChild(button('USAR EL PASE GENERAL', 'allison-btn', function () {
+            var u = new URL(generalPublicUrl()); location.href = u.href;
+          }));
+        });
+      } else {
+        renderGeneralForm(null);
+      }
     }
 
     // Confirmación de asistencia por WhatsApp (invitación individual o anterior sin backend).

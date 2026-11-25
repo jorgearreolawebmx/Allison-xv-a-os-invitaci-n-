@@ -17,12 +17,14 @@ compartir con muchas personas. El enlace NO representa a un solo invitado.
 
 Cada persona que abre el pase general:
 1. Escribe su propio nombre.
-2. Confirma que asistirá (el pase general es de una persona) o indica que no asistirá.
-3. Envía su respuesta.
-4. El servidor crea un registro independiente en INVITADOS y otro en CONFIRMACIONES.
+2. Elige en el selector deslizante «SÍ ASISTIRÉ» o «NO PODRÉ ASISTIR».
+3. Envía su respuesta; el servidor crea un registro individual en INVITADOS y CONFIRMACIONES.
+4. WhatsApp prepara un texto que indica expresamente si SÍ asistirá o NO podrá asistir.
 
 Así, varias personas pueden utilizar la misma URL sin sobrescribir las respuestas
-de otras. Un reintento técnico de la misma solicitud no duplica el registro.
+de otras. Un reintento técnico de la misma solicitud no duplica el registro. Tras guardar, cada persona recibe
+un enlace personal (parámetro `registro`) para volver a abrir su respuesta y cambiar de Sí a No
+o de No a Sí. El enlace general compartido sigue creando registros separados para personas distintas.
 El sistema no puede saber cuántas personas recibieron el enlace; solo puede registrar
 las respuestas que realmente se envían desde el formulario.
 
@@ -43,31 +45,21 @@ PANEL ADMINISTRATIVO
 
 ACTUALIZAR EL BACKEND DE GOOGLE APPS SCRIPT
 --------------------------------------------
-La invitación ya incluye la URL de Apps Script que estaba configurada. El backend
-debe actualizarse por separado porque Google Apps Script no se actualiza al subir
-archivos a GitHub.
+Esta versión añade el selector Sí/No y permite cambiar después la respuesta desde
+un enlace personal. El servidor debe actualizarse una vez; GitHub Pages no actualiza
+el proyecto de Apps Script automáticamente.
 
 1. Abre el proyecto de Apps Script que ya utiliza Allison Abril.
 2. Abre Código.gs.
-3. Reemplaza todo su contenido por el archivo apps-script/Code.gs de este paquete.
+3. Reemplaza TODO el contenido de Código.gs por el archivo completo
+   `apps-script/Code.gs` de este paquete. No busques ni sustituyas líneas sueltas.
 4. Guarda con Ctrl+S.
-5. En el selector de funciones, elige setup y pulsa Ejecutar.
-   - setup() es idempotente: crea las columnas nuevas que falten.
-   - No borra filas ni reinicia la hoja existente.
-   - Conserva el ID de Google Sheets y la contraseña guardados en las propiedades
-     del proyecto.
-6. En Configuración del proyecto → Propiedades del script, cambia ADMIN_PASSWORD
-   por una contraseña nueva y exclusiva antes de compartir el panel públicamente.
-   No escribas esta contraseña en allison-config.js ni en archivos del repositorio.
-6. Comprueba en el registro de ejecución que setup() terminó correctamente.
-7. Publica el cambio del servidor:
-   Implementar → Administrar implementaciones → lápiz (Editar) →
-   Versión: Nueva versión → Implementar.
-8. Conserva la misma implementación / URL que ya está en allison-config.js.
-   No crees una implementación distinta, para no cambiar la URL.
+5. No ejecutes setup(): esta modificación no cambia las columnas ni reinicia hojas.
+   Los registros actuales, la contraseña y el ID de Google Sheets se conservan.
+6. Implementar → Administrar implementaciones → lápiz (Editar) → Versión: Nueva versión
+   → Implementar. Conserva la misma implementación para mantener la URL /exec.
+7. La URL del servidor ya está configurada en allison-config.js; no necesitas editarla.
 
-La URL existente de Apps Script está configurada en allison-config.js.
-No necesitas editarla de nuevo, salvo que cambies deliberadamente la implementación.
 
 PRUEBAS RECOMENDADAS
 --------------------
