@@ -1,0 +1,113 @@
+/* Componentes añadidos para Allison Abril; no alteran las reglas ni posiciones del diseño base. */
+.allison-seal-hotspot { position:absolute; z-index:40; display:block; padding:0; border:0; border-radius:50%; background:transparent; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.allison-seal-hotspot:focus-visible { outline:2px solid rgba(174,104,111,.8); outline-offset:4px; }
+.allison-seal-hint { position:absolute; z-index:39; color:#8c5559; text-align:center; font:italic 34px/1.3 Georgia,serif; text-shadow:0 1px 2px rgba(255,255,255,.75); pointer-events:none; }
+.allison-person-section { position:absolute; left:70px; width:940px; height:600px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:#8e4c50; pointer-events:none; }
+.allison-person-art { width:470px; height:430px; object-fit:contain; display:block; }
+.allison-person-title { margin:4px 0 18px; color:#9a555b; font:600 44px/1.1 Georgia,serif; letter-spacing:.08em; }
+.allison-person-name { max-width:900px; margin:0; color:#77454a; font:34px/1.4 Georgia,serif; }
+.allison-person-section.godmother .allison-person-art { width:450px; }
+#iv-content.allison-trimmed { height:var(--allison-content-h) !important; }
+.allison-thanks-message { position:absolute; left:170px; top:10965px; width:740px; margin:0; text-align:center; color:#8e4c50; font:italic 48px/1.4 Georgia,serif; letter-spacing:.02em; pointer-events:none; }
+.allison-pass-section { position:absolute; left:405px; width:270px; height:180px; }
+.allison-pass-art { width:100%; height:100%; object-fit:contain; display:block; }
+.allison-pass-number { position:absolute; left:58%; top:43%; width:34%; height:18%; display:flex; align-items:center; justify-content:center; color:#8f3d42; font:700 34px/1 Georgia,serif; }
+.allison-pass-guest { position:absolute; left:58%; top:64%; width:34%; text-align:center; color:#8f5557; font:26px/1.15 Georgia,serif; }
+.allison-guest-greeting { position:absolute; left:100px; width:880px; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; pointer-events:none; }
+.allison-guest-name { max-width:860px; color:#b35853; font:58px/1.15 Georgia,serif; overflow-wrap:anywhere; }
+.allison-admin-footer { position:absolute; left:0; top:11250px; width:1080px; display:flex; justify-content:center; }
+.allison-admin-launcher { display:block; width:300px; padding:0; border:0; background:none; cursor:default; -webkit-tap-highlight-color:transparent; }
+.allison-admin-launcher img { display:block; width:100%; height:auto; pointer-events:none; -webkit-user-select:none; user-select:none; }
+.allison-admin-launcher:focus-visible { outline:2px solid rgba(200,149,80,.6); outline-offset:4px; border-radius:12px; }
+.allison-back-button { position:absolute; left:260px; top:11140px; width:560px; border:1px solid #bd8d68; border-radius:40px; padding:18px 24px; background:linear-gradient(135deg,#b96e72,#8e4d55); color:#fffaf4; font:600 24px Georgia,serif; letter-spacing:.06em; cursor:pointer; }
+.allison-modal-overlay { position:fixed; inset:0; z-index:100000; display:flex; align-items:center; justify-content:center; padding:18px; background:rgba(35,20,22,.62); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+.allison-modal-overlay[hidden] { display:none; }
+.allison-modal { position:relative; width:min(100%,520px); max-height:min(88vh,780px); overflow:auto; border:2px solid #c99a70; border-radius:22px; padding:32px 26px 26px; background:linear-gradient(145deg,#fff8f3,#f8e5df); box-shadow:0 18px 60px rgba(20,8,10,.35); }
+.allison-modal-close { position:absolute; top:9px; right:12px; width:38px; height:38px; border:0; border-radius:50%; background:#efd4ce; color:#8e4c50; font:30px/1 Arial,sans-serif; cursor:pointer; }
+.allison-form { display:flex; flex-direction:column; gap:18px; color:#75464a; font-family:Georgia,serif; }
+.allison-form h2 { margin:8px 38px 8px 0; color:#954f55; font:600 25px/1.2 Georgia,serif; text-align:center; letter-spacing:.04em; }
+.allison-field { display:flex; flex-direction:column; gap:7px; font:16px/1.3 Georgia,serif; }
+.allison-field input,.allison-generated-url { width:100%; min-width:0; border:1px solid #d6b4a6; border-radius:10px; padding:13px 12px; color:#573b3c; background:#fffdfb; font:16px/1.3 Arial,sans-serif; }
+.allison-btn { min-height:46px; border:1px solid #bd8d68; border-radius:30px; padding:12px 18px; background:#fff9f4; color:#874e53; font:600 14px/1.2 Arial,sans-serif; letter-spacing:.04em; cursor:pointer; }
+.allison-btn-primary { border-color:#a65e65; background:linear-gradient(135deg,#bd777c,#914d57); color:#fff; }
+.allison-error { min-height:18px; margin:0; color:#a52d36; font:14px Arial,sans-serif; }
+.allison-link-result { display:flex; flex-direction:column; gap:12px; overflow-wrap:anywhere; }
+.allison-help { margin:0; color:#876b67; font:13px/1.45 Arial,sans-serif; }
+body.allison-modal-open { overflow:hidden; }
+.allison-copy-status { min-height:18px; margin:0; font:600 14px/1.4 Arial,sans-serif; text-align:center; }
+.allison-copy-status.is-ok { color:#5f8a5a; }
+.allison-copy-status.is-error { color:#a52d36; font-weight:400; }
+/* Saltar intro */
+.allison-skip-intro { position:absolute; z-index:45; right:max(14px, calc((100% - var(--iv-frame-width)) / 2 + 14px)); top:calc(14px + env(safe-area-inset-top)); padding:8px 16px; border:1px solid rgba(189,141,104,.7); border-radius:20px; background:rgba(255,248,243,.82); color:#8e4c50; font:600 12px/1 Georgia,serif; letter-spacing:.14em; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.allison-skip-intro:hover { background:rgba(255,248,243,.96); }
+.allison-skip-intro:focus-visible { outline:2px solid #c89550; outline-offset:3px; }
+/* Música fija */
+.allison-music-fixed { position:fixed; z-index:9; top:calc(12px + env(safe-area-inset-top)); right:max(12px, calc((100vw - var(--iv-frame-width)) / 2 + 12px)); width:42px; height:42px; }
+.allison-music-fixed > .iv-music { left:0 !important; top:0 !important; width:42px !important; height:42px !important; filter:drop-shadow(0 2px 6px rgba(80,40,40,.25)); }
+.allison-music-fixed .iv-music-volume { display:none; }
+/* Aparición al desplazarse */
+.allison-reveal { opacity:0 !important; translate:0 46px; transition:opacity .85s ease, translate .85s cubic-bezier(.2,.7,.2,1), scale .85s cubic-bezier(.2,.7,.2,1); }
+.allison-reveal.allison-reveal-scale { scale:.96; }
+.allison-reveal[data-from="top"] { translate:0 -46px; }
+.allison-reveal.allison-in { opacity:1 !important; translate:0 0; scale:1; }
+.allison-envelope { transition:opacity .85s ease, translate .45s ease, scale .45s ease, filter .45s ease; }
+@media (hover:hover) { .allison-envelope:hover { translate:0 -12px; scale:1.03; filter:drop-shadow(0 10px 14px rgba(120,60,60,.18)); } }
+@media (prefers-reduced-motion: reduce) { .allison-reveal { opacity:1 !important; translate:none; scale:none; transition:none; } .allison-envelope { transition:none; } }
+@media (max-width:600px) {
+ .allison-seal-hint { font-size:clamp(20px,4vw,30px); }
+ .allison-person-section { left:35px; width:1010px; }
+ .allison-person-art { width:430px; height:400px; }
+ .allison-person-title { font-size:40px; }
+ .allison-person-name { padding:0 28px; font-size:30px; }
+ .allison-thanks-message { left:150px; width:780px; }
+ .allison-pass-number { font-size:34px; }
+ .allison-pass-guest { font-size:22px; }
+ .allison-modal { padding:30px 18px 20px; }
+}
+
+/* Panel administrativo, tablas y confirmaciones */
+.allison-modal.allison-modal-wide { width:min(100%,680px); }
+.allison-subtitle { margin:4px 0 0; color:#954f55; font:600 17px/1.25 Georgia,serif; letter-spacing:.06em; text-align:center; }
+.allison-tabs { display:flex; gap:6px; padding:4px; border:1px solid #e4c9bd; border-radius:28px; background:rgba(255,253,251,.7); }
+.allison-tab { flex:1 1 auto; min-width:0; min-height:38px; border:0; border-radius:22px; padding:8px 10px; background:transparent; color:#874e53; font:600 12px/1.15 Arial,sans-serif; letter-spacing:.04em; cursor:pointer; }
+.allison-tab.is-active { background:linear-gradient(135deg,#bd777c,#914d57); color:#fff; }
+.allison-tab-panel { min-height:120px; }
+.allison-section-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; }
+.allison-section-head .allison-subtitle { text-align:left; }
+.allison-btn-sm { min-height:32px; padding:6px 12px; font-size:12px; }
+.allison-row-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.allison-status { margin:0; min-height:18px; color:#75464a; font:14px/1.45 Arial,sans-serif; }
+.allison-status.is-ok { color:#4f7d4a; font-weight:600; }
+.allison-status.is-error { color:#a52d36; }
+.allison-note { margin:0; padding:10px 12px; border-radius:10px; background:#fbeee8; color:#7b4d4f; font:13px/1.45 Arial,sans-serif; }
+.allison-center { text-align:center; }
+.allison-block { display:block; margin-top:4px; }
+.allison-rsvp-guest { margin:0; color:#b35853; font:30px/1.2 Georgia,serif; text-align:center; overflow-wrap:anywhere; }
+.allison-select { width:100%; border:1px solid #d6b4a6; border-radius:10px; padding:12px; color:#573b3c; background:#fffdfb; font:16px/1.3 Arial,sans-serif; }
+.allison-table-area { width:100%; overflow-x:auto; }
+.allison-table { width:100%; border-collapse:collapse; table-layout:fixed; color:#5f3d3f; font:13px/1.35 Arial,sans-serif; }
+.allison-table th { padding:8px 6px; border-bottom:2px solid #e2c2b5; color:#954f55; font:600 11px/1.2 Arial,sans-serif; letter-spacing:.04em; text-align:left; text-transform:uppercase; }
+.allison-table td { padding:9px 6px; border-bottom:1px solid #f0ddd5; vertical-align:top; overflow-wrap:anywhere; }
+.allison-table .allison-num { text-align:center; }
+.allison-table th:nth-child(2), .allison-table th:nth-child(4) { text-align:center; }
+.allison-td-name { font-weight:600; }
+.allison-detail td { background:#fff6f2; }
+.allison-dl { display:grid; grid-template-columns:auto 1fr; gap:4px 10px; margin:0 0 6px; font-size:12px; }
+.allison-dl dt { color:#954f55; font-weight:600; }
+.allison-dl dd { margin:0; overflow-wrap:anywhere; }
+.allison-pill { display:inline-block; padding:3px 9px; border-radius:20px; font:600 11px/1.3 Arial,sans-serif; white-space:nowrap; }
+.allison-pill[data-estado="ok"] { background:#e3f0df; color:#3f6b3a; }
+.allison-pill[data-estado="pending"] { background:#f8e7d8; color:#8a5a2b; }
+.allison-pill[data-estado="no"] { background:#f1dede; color:#8e3c45; }
+.allison-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+.allison-stat { padding:10px 6px; border:1px solid #ead2c8; border-radius:12px; background:rgba(255,253,251,.85); text-align:center; }
+.allison-stat strong { display:block; color:#914d57; font:600 24px/1.1 Georgia,serif; }
+.allison-stat span { display:block; margin-top:3px; color:#7b5a57; font:11px/1.25 Arial,sans-serif; }
+@media (max-width:480px) {
+ .allison-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .allison-table { font-size:12px; }
+ .allison-table th { font-size:10px; padding:7px 4px; }
+ .allison-table td { padding:8px 4px; }
+ .allison-tab { padding:8px 6px; font-size:10.5px; letter-spacing:0; }
+ .allison-row-actions .allison-btn-sm { flex:1 1 100%; }
+}
