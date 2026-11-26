@@ -7,6 +7,13 @@
 .allison-person-title { margin:4px 0 18px; color:#9a555b; font:600 44px/1.1 Georgia,serif; letter-spacing:.08em; }
 .allison-person-name { max-width:900px; margin:0; color:#77454a; font:34px/1.4 Georgia,serif; }
 .allison-person-section.godmother .allison-person-art { width:450px; }
+/* Indicador discreto de Google Maps, colocado entre la ilustración y su titular. */
+.allison-location-hint { position:absolute; z-index:5; height:24px; display:flex; align-items:center; justify-content:center; gap:7px; color:#9a555b; font:italic 21px/1.2 Georgia,serif; text-align:center; white-space:nowrap; pointer-events:none; }
+.allison-location-arrow { display:inline-block; color:#9a555b; font:normal 28px/1 Georgia,serif; animation:allison-location-arrow-pulse 3.6s ease-in-out infinite; }
+.allison-location-label { color:#9a555b; font:italic 21px/1.2 Georgia,serif; }
+@keyframes allison-location-arrow-pulse { 0%,62%,100% { opacity:.22; transform:translateY(2px); } 72%,88% { opacity:1; transform:translateY(-4px); } }
+@media (prefers-reduced-motion:reduce) { .allison-location-arrow { animation:none; opacity:.75; transform:none; } }
+
 /* Padres: bloque independiente, solo texto y nombres apilados al centro. */
 .allison-parents-section { position:absolute; left:70px; width:940px; height:260px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; color:#8e4c50; pointer-events:none; }
 .allison-parents-title { margin:0; color:#9a555b; font:600 44px/1.1 Georgia,serif; letter-spacing:.08em; }

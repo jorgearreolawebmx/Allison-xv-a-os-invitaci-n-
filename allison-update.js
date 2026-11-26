@@ -125,7 +125,7 @@
     window.addEventListener('resize', updateInvitationHeight);
     // Recorta al final el mismo espacio que se quitó arriba.
     if (shiftUp && contentHost) {
-      var setTrimmedHeight = function () { contentHost.style.setProperty('--allison-content-h', ((11350 - shiftUp - (1400 - familyBlockHeight) - paletteGapCut) * (contentHost.clientWidth || 1) / 1080) + 'px'); };
+      var setTrimmedHeight = function () { contentHost.style.setProperty('--allison-content-h', ((11350 - shiftUp - (1400 - familyBlockHeight) - paletteGapCut + 300) * (contentHost.clientWidth || 1) / 1080) + 'px'); };
       contentHost.classList.add('allison-trimmed'); setTrimmedHeight();
       window.addEventListener('resize', setTrimmedHeight);
       if ('ResizeObserver' in window) new ResizeObserver(setTrimmedHeight).observe(contentHost);
@@ -163,9 +163,32 @@
     parentsSection(2660 - shiftUp, ['Ana Hernández Alarcón', 'Victor Portilla Garcia']);
     personSection(2920 - shiftUp, 'assets/madrina_allison.webp', 'MI MADRINA', 'Isidora García Ortiz', 'godmother');
 
+    // Indicaciones discretas junto a las dos ilustraciones enlazadas a Google Maps.
+    // La posición se calcula desde cada imagen ya desplazada por el layout, por lo que funciona
+    // tanto en el enlace general como en las invitaciones personalizadas.
+    function addLocationHint(artId, titleId) {
+      var art = invitation.querySelector('[data-iv-id="' + artId + '"]');
+      var title = invitation.querySelector('[data-iv-id="' + titleId + '"]');
+      if (!art || !title) return;
+      var artBottom = parseFloat(art.style.top || '0') + parseFloat(art.style.height || '0');
+      var hint = el('div', 'allison-location-hint');
+      hint.setAttribute('aria-hidden', 'true');
+      hint.style.left = title.style.left;
+      hint.style.width = title.style.width;
+      hint.style.top = (artBottom + 3) + 'px';
+      hint.appendChild(el('span', 'allison-location-arrow', '↗'));
+      hint.appendChild(el('span', 'allison-location-label', 'Toca el icono para ir a la ubicación'));
+      invitation.appendChild(hint);
+    }
+    addLocationHint('image_xts2fpioo', 'text_church_title_allison_20261126');
+    addLocationHint('image_yhv3gb31a', 'text_platino_venue_name_20261125');
+
     // Mensaje final de agradecimiento, después de todas las secciones originales.
     var thanks = el('p', 'allison-thanks-message', '«Gracias por acompañarnos en este día tan especial».');
     invitation.appendChild(thanks); liftUp(thanks, endLift);
+    // Separa el agradecimiento del adorno floral inferior del panel de confirmación.
+    // El texto queda fuera del marco, con aire suficiente para que no parezca superpuesto.
+    thanks.style.top = (parseFloat(thanks.style.top) + 130) + 'px';
 
     // Ventanas emergentes.
     var overlay = el('div', 'allison-modal-overlay'); overlay.hidden = true;
@@ -407,6 +430,7 @@
     var adminFlower = el('img'); adminFlower.src = 'assets/adorno_administracion.webp'; adminFlower.alt = ''; adminFlower.draggable = false;
     adminLauncher.appendChild(adminFlower);
     var adminFooter = el('div', 'allison-admin-footer'); adminFooter.appendChild(adminLauncher); invitation.appendChild(adminFooter); liftUp(adminFooter, endLift);
+    adminFooter.style.top = (parseFloat(adminFooter.style.top) + 220) + 'px';
     var adminToken = null;
     function openLogin(notice) {
       var box = el('div', 'allison-form'); box.appendChild(el('h2', '', 'ACCESO ADMINISTRATIVO'));
@@ -691,6 +715,8 @@
       var u = new URL(location.href); u.search = ''; u.hash = ''; location.assign(u.href);
     });
     invitation.appendChild(back); liftUp(back, endLift);
+    // Mantiene una separación clara entre el mensaje, el botón de regreso y el adorno administrativo.
+    back.style.top = (parseFloat(back.style.top) + 190) + 'px';
 
     // El pase personalizado no se muestra en la invitación general.
     if (!personalized) passCard.hidden = true;

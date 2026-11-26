@@ -1,0 +1,7 @@
+ALLISON XV — CORRECCIÓN DE TITULARES DE UBICACIONES
+
+- San Pedro Apóstol se separó del horario y la dirección y ahora usa el estilo de MIS PADRES / MI MADRINA.
+- PLATINO Salón & Jardín de Eventos usa el mismo color rosa empolvado, Georgia semibold, centrado y en dos líneas equilibradas.
+- Se añadió una indicación pequeña con flecha intermitente cerca de cada ilustración: “Toca el icono para ir a la ubicación”.
+- Se conservaron las ilustraciones y sus enlaces originales de Google Maps.
+- No se modificaron los padres, la madrina, el contador, la portada, confirmación, WhatsApp, panel administrativo ni Apps Script.

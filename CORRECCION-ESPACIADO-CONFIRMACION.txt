@@ -1,0 +1,18 @@
+CORRECCION DE ESPACIADO — INVITACION ALLISON ABRIL
+
+Se corrigio el cierre de la invitacion para evitar que el mensaje de agradecimiento se encime visualmente con la peonia inferior del panel de confirmacion.
+
+Cambios puntuales en allison-update.js:
+- El mensaje «Gracias por acompañarnos...» se desplaza 130 px hacia abajo, dejando aire despues del panel ilustrado.
+- El boton «VOLVER AL SOBRE» se desplaza 190 px hacia abajo para conservar un espacio claro despues del mensaje.
+- El adorno/entrada administrativa se desplaza 220 px hacia abajo para no quedar pegado al boton.
+- Se amplía 300 px la altura final reservada del contenido para que el cierre pueda desplazarse completo y no quede recortado.
+
+No se modificaron los textos, imagenes, botones de confirmacion, enlaces de Google Maps, nombres de los padres, madrina, iglesia o salon, ni el backend de Apps Script.
+
+Validaciones realizadas:
+- Sintaxis de JavaScript con Node.js.
+- JSON incorporado en design.js.
+- Integridad del archivo ZIP.
+
+No se pudo ejecutar una prueba visual automatizada del navegador en este entorno, por lo que la vista final debe comprobarse en el navegador despues de publicar/extraer el ZIP.
